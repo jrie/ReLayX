@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>ReLayX 1.0</title>
+        <meta charset="utf-8" />
+        <link rel="stylesheet" type="text/css" href="css/main.css" />
+    </head>
+
+    <body>
+        <div id="mainContainer">
+            <canvas id="relaxCanvas" width="320" height="240">
+                Your browser does not support the canvas item, get a version of <a href="http://mozilla.org/firefox">Firefox</a>
+                or <a href="http://chrome.google.com">Google Chrome</a> which do support canvas.
+            </canvas>
+            <textarea id="relaxCode" rows="3" style="width: 85%;">Output window</textarea>
+        </div>
+
+
+        <script type="text/javascript" src="js/ReLayX.js"></script>
+        <script type="text/javascript">
+            relayx("relaxCanvas", "relaxCode", "firebird", 1020, 600, 10, 10);
+        </script>
+    </body>
+</html>
