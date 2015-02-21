@@ -393,7 +393,7 @@ function relayx(canvasItem, codeItem, designName, width, height, gridX, gridY) {
             mouse.currentAction = null;
         }
 
-        if (mouse.currentAction === "dragContainer") {
+        if (mouse.currentAction === "dragContainer" || mouse.currentAction === "dragGroup") {
             mouse.currentAction = null;
         }
     }
@@ -557,8 +557,6 @@ function relayx(canvasItem, codeItem, designName, width, height, gridX, gridY) {
         mouse.y = evt.clientY - mouse.offsetY + window.scrollY;
 
         if (mouse.currentAction === "dragContainer") {
-
-
             mouse.selection[2] += mouse.x - mousePreviousX;
             mouse.selection[3] += mouse.y - mousePreviousY;
             mouse.selection[4] += mouse.x - mousePreviousX;
@@ -570,6 +568,30 @@ function relayx(canvasItem, codeItem, designName, width, height, gridX, gridY) {
                 mouse.selection[4] = Math.round(mouse.selection[4] / system.gridX) * system.gridX;
                 mouse.selection[5] = Math.round(mouse.selection[5] / system.gridY) * system.gridY;
             }
+        } else if (mouse.currentAction === "dragGroup" && system.activeGroup !== null) {
+            var groupSize = system.groups[system.activeGroup].length;
+            var mX = mouse.x - mousePreviousX;
+            var mY = mouse.y - mousePreviousY;
+            for (var groupItem = 0; groupItem < groupSize; groupItem++) {
+                var itemId = system.groups[system.activeGroup][groupItem];
+                for (var index = 0; index < system.layoutSize; index++) {
+                    if (system.layoutData[index][0] === itemId) {
+                        var item = system.layoutData[index];
+                        item[2] += mX;
+                        item[3] += mY;
+                        item[4] += mX;
+                        item[5] += mY;
+
+                        if (mouse.snapToGrid) {
+                            item[2] = Math.round(item[2] / system.gridX) * system.gridX;
+                            item[3] = Math.round(item[3] / system.gridY) * system.gridY;
+                            item[4] = Math.round(item[4] / system.gridX) * system.gridX;
+                            item[5] = Math.round(item[5] / system.gridY) * system.gridY;
+                        }
+                    }
+                }
+            }
+
         }
     });
 
@@ -649,6 +671,14 @@ function relayx(canvasItem, codeItem, designName, width, height, gridX, gridY) {
             mouse.snapToGrid = true;
             //mouse.currentAction = null;
             return;
+        }
+
+        if (evt.keyCode === 89) {
+            if (mouse.currentAction !== "dragGroup") {
+                mouse.currentAction = "dragGroup";
+            } else {
+                mouse.currentAction = "selected";
+            }
         }
 
     }
