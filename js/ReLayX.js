@@ -86,8 +86,8 @@ function relayx(canvasItem, codeItem, designName, width, height, gridX, gridY) {
     mouse.x = 0;
     mouse.y = 0;
     mouse.threshold = 50;
-    mouse.offsetX = canvas.offsetLeft;
-    mouse.offsetY = canvas.offsetTop;
+    mouse.offsetX = canvas.offsetLeft + window.scrollY;
+    mouse.offsetY = canvas.offsetTop + window.scrollX;
     mouse.actionStartX = 0;
     mouse.actionStartY = 0;
     mouse.actionEndX = 0;
@@ -320,8 +320,8 @@ function relayx(canvasItem, codeItem, designName, width, height, gridX, gridY) {
     }
 
     function checkMouseDown(evt) {
-        mouse.actionStartX = evt.clientX - mouse.offsetX;
-        mouse.actionStartY = evt.clientY - mouse.offsetY;
+        mouse.actionStartX = evt.clientX - mouse.offsetX + window.scrollX;
+        mouse.actionStartY = evt.clientY - mouse.offsetY + window.scrollY;
         var mX = evt.clientX - mouse.offsetX;
         var mY = evt.clientY - mouse.offsetY;
         var hasSelection = false;
@@ -346,21 +346,27 @@ function relayx(canvasItem, codeItem, designName, width, height, gridX, gridY) {
 
         if (hasSelection) {
             if (mouse.currentAction === "grouping") {
-                if (system.activeGroup !== null) {
-                    system.groups[system.activeGroup].push(mouse.selection[0]);
+                if (mouse.selection[9] === -1) {
+                    if (mouse.previousSelection !== null && mouse.previousSelection[9] === -1) {
+                        system.groups.push([mouse.previousSelection[0], mouse.selection[0]]);
+                        system.activeGroup = system.groups.length - 1;
+                        mouse.selection[9] = system.activeGroup;
+                        mouse.previousSelection[9] = system.activeGroup;
+                    } else {
+                        system.groups[system.activeGroup].push(mouse.selection[0]);
+                        mouse.selection[9] = system.activeGroup;
+                    }
                 } else {
-                    // TODO: Check for presens in group and add if not present
-                    system.activeGroup = null;
+                    system.activeGroup = mouse.selection[9];
                 }
             } else {
-                system.activeGroup = null;
-                for (var item = 0; item < system.groups.length; item++) {
-                    if (system.groups[item].indexOf(mouse.selection[0]) !== -1) {
-                        system.activeGroup = item;
-                        break;
-                    }
+                if (mouse.selection[9] !== -1) {
+                    system.activeGroup = mouse.selection[9];
+                } else {
+                    system.activeGroup = null;
                 }
             }
+
             mouse.currentAction = "selected";
             return;
         }
@@ -370,8 +376,8 @@ function relayx(canvasItem, codeItem, designName, width, height, gridX, gridY) {
     }
 
     function checkMouseUp(evt) {
-        mouse.actionEndX = evt.clientX - mouse.offsetX;
-        mouse.actionEndY = evt.clientY - mouse.offsetY;
+        mouse.actionEndX = evt.clientX - mouse.offsetX + window.scrollX;
+        mouse.actionEndY = evt.clientY - mouse.offsetY + window.scrollY;
 
         if (mouse.currentAction === "selection") {
             createLayoutContainer();
@@ -385,7 +391,7 @@ function relayx(canvasItem, codeItem, designName, width, height, gridX, gridY) {
         var itemStartY = 0;
         var itemEndY = 0;
 
-        if (mouse.snapEdges) {
+        if (mouse.snapToGrid) {
             if (mouse.actionStartX > mouse.actionEndX) {
                 mouse.actionStartX = Math.ceil(mouse.actionStartX / system.gridX) * system.gridX;
             } else {
@@ -490,7 +496,7 @@ function relayx(canvasItem, codeItem, designName, width, height, gridX, gridY) {
     function drawSelection() {
         dc.strokeStyle = "#000";
         dc.fillStyle = "rgba(255,255,255, 0.2)";
-        if (mouse.snapEdges) {
+        if (mouse.snapToGrid) {
             if (mouse.actionStartX > mouse.x) {
                 var mStartX = Math.ceil(mouse.actionStartX / system.gridX) * system.gridX;
             } else {
@@ -532,8 +538,8 @@ function relayx(canvasItem, codeItem, designName, width, height, gridX, gridY) {
 
     // Bind the mouse to the current window
     canvas.addEventListener("mousemove", function (evt) {
-        mouse.x = evt.clientX - mouse.offsetX;
-        mouse.y = evt.clientY - mouse.offsetY;
+        mouse.x = evt.clientX - mouse.offsetX + window.scrollX;
+        mouse.y = evt.clientY - mouse.offsetY + window.scrollY;
     });
 
     function placeHolder() {
@@ -541,14 +547,13 @@ function relayx(canvasItem, codeItem, designName, width, height, gridX, gridY) {
     }
 
     function handleKeyboardDown(evt) {
-        lg(evt.keyCode);
-
         if (mouse.selection !== null) {
             if (evt.keyCode === 46) {
                 for (var item = 0; item < system.layoutSize; item++) {
                     if (system.layoutData[item][0] === mouse.selection[0]) {
                         var hasNewSelection = false;
 
+                        var maxIndex = 0;
                         for (var groupIndex = 0; groupIndex < system.groups.length; groupIndex++) {
                             var itemIndex = system.groups[groupIndex].indexOf(mouse.selection[0]);
                             if (itemIndex !== -1) {
@@ -556,6 +561,10 @@ function relayx(canvasItem, codeItem, designName, width, height, gridX, gridY) {
                                     system.groups.splice(groupIndex, 1);
                                     system.activeGroup = null;
                                     mouse.selection = null;
+                                    maxIndex = system.groups.length - 1;
+                                    if (maxIndex < 0) {
+                                        maxIndex = 0;
+                                    }
                                 } else {
                                     system.groups[groupIndex].splice(itemIndex, 1);
                                     var lastIndex = system.groups[groupIndex][system.groups[groupIndex].length - 1];
@@ -575,8 +584,17 @@ function relayx(canvasItem, codeItem, designName, width, height, gridX, gridY) {
                         system.layoutData.splice(item, 1);
                         system.layoutSize--;
 
+                        while (maxIndex--) {
+                            for (var layoutItem = 0; layoutItem < system.layoutSize; layoutItem++) {
+                                if (system.layoutData[layoutItem][9] > maxIndex) {
+                                    system.layoutData[layoutItem][9]--;
+                                }
+                            }
+                        }
+
                         if (!hasNewSelection) {
                             mouse.selection = null;
+                            system.activeGroup = null;
                         }
 
                         return;
@@ -585,26 +603,19 @@ function relayx(canvasItem, codeItem, designName, width, height, gridX, gridY) {
             }
 
             if (evt.keyCode === 17) {
-                if (system.activeGroup === null || mouse.currentAction === null) {
+                if (mouse.currentAction === "selected") {
+                    mouse.currentAction = "grouping";
                     if (mouse.selection === null) {
                         return;
                     }
-                    mouse.currentAction = "grouping";
-                    for (var item = 0; item < system.groups.length; item++) {
-                        if (system.groups[item].indexOf(mouse.selection[0]) !== -1) {
-                            system.activeGroup = item;
-                            return;
-                        }
-                    }
-
-                    system.activeGroup = 0;
-                    system.groups.push([mouse.selection[0]]);
                 }
             }
+
         }
+
         if (mouse.currentAction === "selection") {
             if (evt.keyCode === 16) {
-                mouse.snapEdges = true;
+                mouse.snapToGrid = true;
                 return;
             }
 
@@ -616,9 +627,11 @@ function relayx(canvasItem, codeItem, designName, width, height, gridX, gridY) {
         if (evt.keyCode === 17) {
             mouse.currentAction = null;
         } else if (evt.keyCode === 16) {
-            mouse.snapEdges = false;
+            mouse.snapToGrid = false;
             return;
         }
+
+        lg(evt.keyCode);
     }
 
     canvas.addEventListener("mousedown", checkMouseDown);
