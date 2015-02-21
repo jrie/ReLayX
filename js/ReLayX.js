@@ -394,7 +394,7 @@ function relayx(canvasItem, codeItem, designName, width, height, gridX, gridY) {
         }
 
         if (mouse.currentAction === "dragContainer" || mouse.currentAction === "dragGroup") {
-            mouse.currentAction = null;
+            mouse.currentAction = "selected";
         }
     }
 
