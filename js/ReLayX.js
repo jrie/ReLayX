@@ -50,7 +50,7 @@ function getDesign(designName, width, height, gridX, gridY) {
             design.background = [["rect"], ["solid"], [["#6a0000"]], [[0, 0, width, height]]];
             design.defaultMouse = ["#fff", "#000", "round", "line", [0, 0, 1, 0, 12, 10, 12, 15, 5, 15]];
 
-            design.itemSelectionColor = ["#fff", "#aa4a00"];
+            design.itemSelectionColor = ["#fff", "#aa4a00", "#8a1a00"];
             design.containerElement = ["solid", ["#3a0000"]];
             return design;
             break;
@@ -59,6 +59,7 @@ function getDesign(designName, width, height, gridX, gridY) {
 
 // Main ReLayX
 var system = {};
+var mouse = {};
 function relayx(canvasItem, codeItem, designName, width, height, gridX, gridY) {
 
     window.requestAnimationFrame = window.requestAnimationFrame || window.mozRequestAnimationFrame || window.webkitRequestAnimationFrame || window.oRequestAnimationFrame;
@@ -73,7 +74,7 @@ function relayx(canvasItem, codeItem, designName, width, height, gridX, gridY) {
 
     // General variables
     var canvas = document.getElementById(canvasItem);
-    var coder = document.getElementById(codeItem);
+    var codePanel = document.getElementById(codeItem);
     var dc = canvas.getContext("2d");
 
     // Set styles
@@ -81,7 +82,7 @@ function relayx(canvasItem, codeItem, designName, width, height, gridX, gridY) {
     canvas.height = height;
     canvas.style.cursor = "none";
 
-    var mouse = {};
+    //var mouse = {};
     mouse.x = 0;
     mouse.y = 0;
     mouse.threshold = 50;
@@ -91,8 +92,8 @@ function relayx(canvasItem, codeItem, designName, width, height, gridX, gridY) {
     mouse.actionStartY = 0;
     mouse.actionEndX = 0;
     mouse.actionEndY = 0;
-    mouse.selection = -1;
-    mouse.splitter = null;
+    mouse.selection = null;
+    mouse.previousSelection = null;
     mouse.currentAction = null;
 
     var design = getDesign(designName, width, height, gridX, gridY);
@@ -105,6 +106,9 @@ function relayx(canvasItem, codeItem, designName, width, height, gridX, gridY) {
     system.gridY = gridY;
     system.layoutData = [];
     system.layoutSize = 0;
+    system.activeGroup = null;
+    system.groups = [];
+    system.lastId = 0;
 
 
     // Helper functions
@@ -320,7 +324,12 @@ function relayx(canvasItem, codeItem, designName, width, height, gridX, gridY) {
         mouse.actionStartY = evt.clientY - mouse.offsetY;
         var mX = evt.clientX - mouse.offsetX;
         var mY = evt.clientY - mouse.offsetY;
-        mouse.currentAction = "selection";
+        var hasSelection = false;
+
+        if (mouse.selection !== null) {
+            mouse.previousSelection = mouse.selection;
+        }
+
         // TODO: Check for splitters or other items underneath the cursor
         var layoutItem = [];
         for (var item = 0; item < system.layoutSize; item++) {
@@ -330,17 +339,34 @@ function relayx(canvasItem, codeItem, designName, width, height, gridX, gridY) {
             dc.rect(layoutItem[2], layoutItem[3], layoutItem[4] - layoutItem[2], layoutItem[5] - layoutItem[3]);
             dc.closePath();
             if (dc.isPointInPath(mX, mY)) {
-                mouse.selection = layoutItem[0];
-                mouse.currentAction = "selected";
+                mouse.selection = layoutItem;
+                hasSelection = true;
             }
         }
 
-        if (mouse.currentAction === "selected") {
+        if (hasSelection) {
+            if (mouse.currentAction === "grouping") {
+                if (system.activeGroup !== null) {
+                    system.groups[system.activeGroup].push(mouse.selection[0]);
+                } else {
+                    // TODO: Check for presens in group and add if not present
+                    system.activeGroup = null;
+                }
+            } else {
+                system.activeGroup = null;
+                for (var item = 0; item < system.groups.length; item++) {
+                    if (system.groups[item].indexOf(mouse.selection[0]) !== -1) {
+                        system.activeGroup = item;
+                        break;
+                    }
+                }
+            }
+            mouse.currentAction = "selected";
             return;
-        } else {
-            mouse.selection = null;
         }
 
+        mouse.currentAction = "selection";
+        mouse.selection = null;
     }
 
     function checkMouseUp(evt) {
@@ -358,6 +384,22 @@ function relayx(canvasItem, codeItem, designName, width, height, gridX, gridY) {
         var itemEndX = 0;
         var itemStartY = 0;
         var itemEndY = 0;
+
+        if (mouse.snapEdges) {
+            if (mouse.actionStartX > mouse.actionEndX) {
+                mouse.actionStartX = Math.ceil(mouse.actionStartX / system.gridX) * system.gridX;
+            } else {
+                mouse.actionStartX = Math.floor(mouse.actionStartX / system.gridX) * system.gridX;
+            }
+
+            if (mouse.actionStartY > mouse.actionEndY) {
+                mouse.actionStartY = Math.ceil(mouse.actionStartY / system.gridY) * system.gridY;
+            } else {
+                mouse.actionStartY = Math.floor(mouse.actionStartY / system.gridY) * system.gridY;
+            }
+            mouse.actionEndX = Math.ceil(mouse.actionEndX / system.gridX) * system.gridX;
+            mouse.actionEndY = Math.ceil(mouse.actionEndY / system.gridY) * system.gridY;
+        }
 
         if (mouse.actionStartX < mouse.actionEndX) {
             itemStartX = mouse.actionStartX;
@@ -381,30 +423,66 @@ function relayx(canvasItem, codeItem, designName, width, height, gridX, gridY) {
             return;
         }
 
-        system.layoutData.push([system.layoutData.length, "containerElement", itemStartX, itemStartY, itemEndX, itemEndY, 0, 0, 0]);
+        var id = 0;
+        while (true) {
+            id = new Date().getTime();
+            if (id === system.lastId) {
+                continue;
+            } else {
+                system.lastId = id;
+                break;
+            }
+        }
+
+        // id, designElementName, x, y, xEnd, yEnd, border, padding, margin, groupIndex
+        system.layoutData.push([id, "containerElement", itemStartX, itemStartY, itemEndX, itemEndY, 0, 0, 0, -1]);
         system.layoutSize++;
     }
 
-    function drawLayoutItems() {
+    // Render the layout items
+    function renderLayoutItems() {
         var layoutItem = [];
         var itemDesign = [];
-        for (var index = 0; index < system.layoutSize; index++) {
-            layoutItem = system.layoutData[index];
-            itemDesign = design[layoutItem[1]];
-            if (mouse.selection === layoutItem[0]) {
-                dc.fillStyle = design.itemSelectionColor[1];
-                dc.strokeStyle = design.itemSelectionColor[0];
-                dc.beginPath();
-                dc.rect(layoutItem[2], layoutItem[3], layoutItem[4] - layoutItem[2], layoutItem[5] - layoutItem[3]);
-                dc.closePath();
-                dc.fill();
-                dc.stroke();
-
-            } else {
+        var index = system.layoutSize;
+        if (mouse.selection === null) {
+            for (var index = 0; index < system.layoutSize; index++) {
+                layoutItem = system.layoutData[index];
+                itemDesign = design[layoutItem[1]];
                 if (itemDesign[0] === "solid") {
                     dc.fillStyle = itemDesign[1];
                 }
                 dc.fillRect(layoutItem[2], layoutItem[3], layoutItem[4] - layoutItem[2], layoutItem[5] - layoutItem[3]);
+            }
+        } else {
+            for (var index = 0; index < system.layoutSize; index++) {
+                layoutItem = system.layoutData[index];
+                itemDesign = design[layoutItem[1]];
+                if (system.activeGroup !== null && system.groups[system.activeGroup].indexOf(layoutItem[0]) !== -1) {
+                    if (mouse.selection[0] === layoutItem[0]) {
+                        dc.fillStyle = design.itemSelectionColor[2];
+                    } else {
+                        dc.fillStyle = design.itemSelectionColor[1];
+                    }
+                    dc.strokeStyle = design.itemSelectionColor[0];
+                    dc.beginPath();
+                    dc.rect(layoutItem[2], layoutItem[3], layoutItem[4] - layoutItem[2], layoutItem[5] - layoutItem[3]);
+                    dc.closePath();
+                    dc.fill();
+                    dc.stroke();
+                } else if (mouse.selection[0] === layoutItem[0]) {
+                    dc.fillStyle = design.itemSelectionColor[1];
+                    dc.strokeStyle = design.itemSelectionColor[0];
+                    dc.beginPath();
+                    dc.rect(layoutItem[2], layoutItem[3], layoutItem[4] - layoutItem[2], layoutItem[5] - layoutItem[3]);
+                    dc.closePath();
+                    dc.fill();
+                    dc.stroke();
+                } else {
+                    if (itemDesign[0] === "solid") {
+                        dc.fillStyle = itemDesign[1];
+                    }
+                    dc.fillRect(layoutItem[2], layoutItem[3], layoutItem[4] - layoutItem[2], layoutItem[5] - layoutItem[3]);
+                }
             }
         }
     }
@@ -412,7 +490,25 @@ function relayx(canvasItem, codeItem, designName, width, height, gridX, gridY) {
     function drawSelection() {
         dc.strokeStyle = "#000";
         dc.fillStyle = "rgba(255,255,255, 0.2)";
-        dc.rect(mouse.actionStartX, mouse.actionStartY, mouse.x - mouse.actionStartX, mouse.y - mouse.actionStartY);
+        if (mouse.snapEdges) {
+            if (mouse.actionStartX > mouse.x) {
+                var mStartX = Math.ceil(mouse.actionStartX / system.gridX) * system.gridX;
+            } else {
+                var mStartX = Math.floor(mouse.actionStartX / system.gridX) * system.gridX;
+            }
+
+            if (mouse.actionStartY > mouse.y) {
+                var mStartY = Math.ceil(mouse.actionStartY / system.gridY) * system.gridY;
+            } else {
+                var mStartY = Math.floor(mouse.actionStartY / system.gridY) * system.gridY;
+            }
+
+            var mEndX = Math.ceil(mouse.x / system.gridX) * system.gridX;
+            var mEndY = Math.ceil(mouse.y / system.gridY) * system.gridY;
+            dc.rect(mStartX, mStartY, mEndX - mStartX, mEndY - mStartY);
+        } else {
+            dc.rect(mouse.actionStartX, mouse.actionStartY, mouse.x - mouse.actionStartX, mouse.y - mouse.actionStartY);
+        }
         dc.stroke();
         dc.fill();
     }
@@ -426,7 +522,7 @@ function relayx(canvasItem, codeItem, designName, width, height, gridX, gridY) {
         if (mouse.currentAction === "selection") {
             drawSelection();
         }
-        drawLayoutItems();
+        renderLayoutItems();
 
 
         drawMouse();
@@ -444,29 +540,94 @@ function relayx(canvasItem, codeItem, designName, width, height, gridX, gridY) {
 
     }
 
-    function cancelAction(evt) {
-        mouse.currentAction = null;
+    function handleKeyboardDown(evt) {
+        lg(evt.keyCode);
 
         if (mouse.selection !== null) {
             if (evt.keyCode === 46) {
                 for (var item = 0; item < system.layoutSize; item++) {
-                    if (system.layoutData[item][0] === mouse.selection) {
+                    if (system.layoutData[item][0] === mouse.selection[0]) {
+                        var hasNewSelection = false;
+
+                        for (var groupIndex = 0; groupIndex < system.groups.length; groupIndex++) {
+                            var itemIndex = system.groups[groupIndex].indexOf(mouse.selection[0]);
+                            if (itemIndex !== -1) {
+                                if (system.groups[groupIndex].length === 1) {
+                                    system.groups.splice(groupIndex, 1);
+                                    system.activeGroup = null;
+                                    mouse.selection = null;
+                                } else {
+                                    system.groups[groupIndex].splice(itemIndex, 1);
+                                    var lastIndex = system.groups[groupIndex][system.groups[groupIndex].length - 1];
+                                    for (var layoutIndex = 0; layoutIndex < system.layoutSize; layoutIndex++) {
+                                        if (system.layoutData[layoutIndex][0] === lastIndex) {
+                                            mouse.selection = system.layoutData[layoutIndex];
+                                            mouse.previousSelection = null;
+                                            hasNewSelection = true;
+                                        }
+                                    }
+                                }
+
+                                break;
+                            }
+                        }
+
                         system.layoutData.splice(item, 1);
                         system.layoutSize--;
-                        mouse.selection = -1;
+
+                        if (!hasNewSelection) {
+                            mouse.selection = null;
+                        }
+
                         return;
                     }
                 }
             }
+
+            if (evt.keyCode === 17) {
+                if (system.activeGroup === null || mouse.currentAction === null) {
+                    if (mouse.selection === null) {
+                        return;
+                    }
+                    mouse.currentAction = "grouping";
+                    for (var item = 0; item < system.groups.length; item++) {
+                        if (system.groups[item].indexOf(mouse.selection[0]) !== -1) {
+                            system.activeGroup = item;
+                            return;
+                        }
+                    }
+
+                    system.activeGroup = 0;
+                    system.groups.push([mouse.selection[0]]);
+                }
+            }
+        }
+        if (mouse.currentAction === "selection") {
+            if (evt.keyCode === 16) {
+                mouse.snapEdges = true;
+                return;
+            }
+
+            mouse.currentAction = null;
+        }
+    }
+
+    function handleKeyboardUp(evt) {
+        if (evt.keyCode === 17) {
+            mouse.currentAction = null;
+        } else if (evt.keyCode === 16) {
+            mouse.snapEdges = false;
+            return;
         }
     }
 
     canvas.addEventListener("mousedown", checkMouseDown);
     canvas.addEventListener("mouseup", checkMouseUp);
     canvas.addEventListener("mouseout", placeHolder);
-    document.addEventListener("keydown", cancelAction);
+    document.addEventListener("keydown", handleKeyboardDown);
+    document.addEventListener("keyup", handleKeyboardUp);
 
-// Get the right offset values after window resizing
+    // Get the right offset values after window resizing
     window.addEventListener("resize", function () {
         mouse.offsetX = canvas.offsetLeft;
         mouse.offsetY = canvas.offsetTop;
