@@ -49,6 +49,7 @@ function getDesign(designName, width, height, gridX, gridY) {
         default:
             design.background = [["rect"], ["solid"], [["#6a0000"]], [[0, 0, width, height]]];
             design.defaultMouse = ["#fff", "#000", "round", "line", [0, 0, 1, 0, 12, 10, 12, 15, 5, 15]];
+            design.dragMoveMouse = ["#fff", "#000", "round", "line", [0, 0, 1, 0, 12, 10, 12, 15, 5, 15]];
 
             design.itemSelectionColor = ["#fff", "#aa4a00", "#8a1a00"];
             design.containerElement = ["solid", ["#3a0000"]];
@@ -95,6 +96,7 @@ function relayx(canvasItem, codeItem, designName, width, height, gridX, gridY) {
     mouse.selection = null;
     mouse.previousSelection = null;
     mouse.currentAction = null;
+    mouse.snapToGrid = false;
 
     var design = getDesign(designName, width, height, gridX, gridY);
 
@@ -255,6 +257,9 @@ function relayx(canvasItem, codeItem, designName, width, height, gridX, gridY) {
     // Draw the mouse
     function drawMouse() {
         switch (mouse.current) {
+            case "dragMove":
+                var activeMouse = design.dragMoveMouse;
+                break;
             case "default":
             default:
                 var activeMouse = design.defaultMouse;
@@ -367,7 +372,11 @@ function relayx(canvasItem, codeItem, designName, width, height, gridX, gridY) {
                 }
             }
 
-            mouse.currentAction = "selected";
+            if (mouse.previousSelection !== null && mouse.currentAction === "selected" && mouse.previousSelection[0] === mouse.selection[0]) {
+                mouse.currentAction = "dragContainer";
+            } else {
+                mouse.currentAction = "selected";
+            }
             return;
         }
 
@@ -381,6 +390,10 @@ function relayx(canvasItem, codeItem, designName, width, height, gridX, gridY) {
 
         if (mouse.currentAction === "selection") {
             createLayoutContainer();
+            mouse.currentAction = null;
+        }
+
+        if (mouse.currentAction === "dragContainer") {
             mouse.currentAction = null;
         }
     }
@@ -538,8 +551,26 @@ function relayx(canvasItem, codeItem, designName, width, height, gridX, gridY) {
 
     // Bind the mouse to the current window
     canvas.addEventListener("mousemove", function (evt) {
+        var mousePreviousX = mouse.x;
+        var mousePreviousY = mouse.y;
         mouse.x = evt.clientX - mouse.offsetX + window.scrollX;
         mouse.y = evt.clientY - mouse.offsetY + window.scrollY;
+
+        if (mouse.currentAction === "dragContainer") {
+
+
+            mouse.selection[2] += mouse.x - mousePreviousX;
+            mouse.selection[3] += mouse.y - mousePreviousY;
+            mouse.selection[4] += mouse.x - mousePreviousX;
+            mouse.selection[5] += mouse.y - mousePreviousY;
+
+            if (mouse.snapToGrid) {
+                mouse.selection[2] = Math.round(mouse.selection[2] / system.gridX) * system.gridX;
+                mouse.selection[3] = Math.round(mouse.selection[3] / system.gridY) * system.gridY;
+                mouse.selection[4] = Math.round(mouse.selection[4] / system.gridX) * system.gridX;
+                mouse.selection[5] = Math.round(mouse.selection[5] / system.gridY) * system.gridY;
+            }
+        }
     });
 
     function placeHolder() {
@@ -608,19 +639,18 @@ function relayx(canvasItem, codeItem, designName, width, height, gridX, gridY) {
                     if (mouse.selection === null) {
                         return;
                     }
+                    return;
                 }
             }
 
         }
 
-        if (mouse.currentAction === "selection") {
-            if (evt.keyCode === 16) {
-                mouse.snapToGrid = true;
-                return;
-            }
-
-            mouse.currentAction = null;
+        if (evt.keyCode === 16) {
+            mouse.snapToGrid = true;
+            return;
         }
+
+        mouse.currentAction = null;
     }
 
     function handleKeyboardUp(evt) {
