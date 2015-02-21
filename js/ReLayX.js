@@ -647,10 +647,10 @@ function relayx(canvasItem, codeItem, designName, width, height, gridX, gridY) {
 
         if (evt.keyCode === 16) {
             mouse.snapToGrid = true;
+            //mouse.currentAction = null;
             return;
         }
 
-        mouse.currentAction = null;
     }
 
     function handleKeyboardUp(evt) {
