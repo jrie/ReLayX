@@ -622,7 +622,8 @@ function relayx(canvasItem, codeItem, designName, width, height, gridX, gridY, g
             for (var index = 0; index < system.layoutSize; index++) {
                 layoutItem = system.layoutData[index];
                 itemDesign = design[layoutItem[1]];
-                if (system.activeGroup !== null && system.layoutSize !== 0 && system.groups[system.activeGroup].indexOf(layoutItem[0]) !== -1) {
+
+                if (system.activeGroup !== null && system.groups[system.activeGroup].indexOf(layoutItem[0]) !== -1) {
                     if (mouse.selection[0] === layoutItem[0]) {
                         dc.fillStyle = design.itemSelectionColor[2];
                     } else {
@@ -847,10 +848,7 @@ function relayx(canvasItem, codeItem, designName, width, height, gridX, gridY, g
                                     system.groups.splice(groupIndex, 1);
                                     system.activeGroup = null;
                                     mouse.selection = null;
-                                    maxIndex = system.groups.length - 1;
-                                    if (maxIndex < 0) {
-                                        maxIndex = 0;
-                                    }
+                                    maxIndex = system.groups.length;
                                 } else {
                                     system.groups[groupIndex].splice(itemIndex, 1);
                                     var lastIndex = system.groups[groupIndex][system.groups[groupIndex].length - 1];
@@ -859,6 +857,7 @@ function relayx(canvasItem, codeItem, designName, width, height, gridX, gridY, g
                                             mouse.selection = system.layoutData[layoutIndex];
                                             mouse.previousSelection = null;
                                             hasNewSelection = true;
+                                            system.activeGroup = groupIndex;
                                             break;
                                         }
                                     }
@@ -870,16 +869,18 @@ function relayx(canvasItem, codeItem, designName, width, height, gridX, gridY, g
 
                         system.layoutData.splice(item, 1);
                         system.layoutSize--;
-
-                        while (maxIndex--) {
-                            for (var layoutItem = 0; layoutItem < system.layoutSize; layoutItem++) {
-                                if (system.layoutData[layoutItem][9] > maxIndex) {
-                                    system.layoutData[layoutItem][9]--;
+                        if (maxIndex > 0) {
+                            while (maxIndex--) {
+                                for (var layoutItem = 0; layoutItem < system.layoutSize; layoutItem++) {
+                                    if (system.layoutData[layoutItem][9] > maxIndex) {
+                                        system.layoutData[layoutItem][9]--;
+                                    }
                                 }
                             }
                         }
 
                         if (!hasNewSelection) {
+                            mouse.previousSelection = null;
                             mouse.selection = null;
                             system.activeGroup = null;
                         }
