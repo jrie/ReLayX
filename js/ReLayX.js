@@ -921,7 +921,7 @@ function relayx(canvasItem, codeItem, designName, width, height, gridX, gridY, g
                                     system.groups.splice(groupIndex, 1);
                                     system.activeGroup = null;
                                     mouse.selection = null;
-                                    maxIndex = groupIndex;
+
                                 } else {
                                     system.groups[groupIndex].splice(itemIndex, 1);
                                     var lastIndex = system.groups[groupIndex][system.groups[groupIndex].length - 1];
@@ -942,12 +942,10 @@ function relayx(canvasItem, codeItem, designName, width, height, gridX, gridY, g
 
                         system.layoutData.splice(item, 1);
                         system.layoutSize--;
-                        if (maxIndex > 0) {
-                            while (maxIndex--) {
-                                for (var layoutItem = 0; layoutItem < system.layoutSize; layoutItem++) {
-                                    if (system.layoutData[layoutItem][9] > maxIndex) {
-                                        system.layoutData[layoutItem][9]--;
-                                    }
+                        for (var group = 0; group < system.groups.length; group++) {
+                            for (var layoutItem = 0; layoutItem < system.layoutSize; layoutItem++) {
+                                if (system.groups[group].indexOf(system.layoutData[layoutItem][0]) !== -1) {
+                                    system.layoutData[layoutItem][9] = group;
                                 }
                             }
                         }
