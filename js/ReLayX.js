@@ -45,20 +45,36 @@ function getDesign(designName, width, height) {
     }
 
     switch (designName) {
+        case "snowwhite":
+            design.background = [["rect"], ["solid"], [["#eee"]], [[0, 0, width, height]]];
+
+            design.defaultMouse = ["#fff", "#000", "round", "line", [0, 0, 1, 0, 12, 10, 12, 15, 5, 15]];
+            design.dragMoveMouse = ["#fff", "#000", "round", "line", [0, 0, 1, 0, 12, 10, 12, 15, 5, 15]];
+            design.gridStrokeColor = 'rgba(0,0,0, 0.5)';
+            design.hightlighterColor = "rgba(0,0,0, 0.1)";
+
+            design.itemSelectionColor = ["#cecece", "#fff"];
+            design.containerElement = ["solid", ['#9a9a9a']];
+            design.containerBorderColor = 'rgba(0,0,0, 0.5)';
+            break;
         case "firebird":
         default:
             design.background = [["rect"], ["solid"], [["#6a0000"]], [[0, 0, width, height]]];
             design.defaultMouse = ["#fff", "#000", "round", "line", [0, 0, 1, 0, 12, 10, 12, 15, 5, 15]];
             design.dragMoveMouse = ["#fff", "#000", "round", "line", [0, 0, 1, 0, 12, 10, 12, 15, 5, 15]];
-
-            design.itemSelectionColor = ["#fff", "#aa4a00", "#8a1a00"];
-            design.containerElement = ["solid", ['rgba(56, 0, 0, 0.55)']];
             design.gridStrokeColor = 'rgba(255,255,255, 0.2)';
+            design.hightlighterColor = "rgba(255,200,0, 0.1)";
+
+            design.itemSelectionColor = ["#aa4a00", "#8a1a00"];
+            design.containerElement = ["solid", ['rgba(56, 0, 0, 0.55)']];
+            design.containerBorderColor = 'rgba(0,0,0, 0.5)';
 
             design.resizeRightBottom = [["line", "line"], ["solid", "solid"], [["#222"], ["#fff"]], [[10, 0, 10, 10, 0, 10, 10, 0], [7, 3, 7, 7, 3, 7, 7, 3]], [-12, -12]];
-            return design;
+
             break;
     }
+
+    return design;
 }
 
 // Main ReLayX
@@ -135,7 +151,6 @@ function relayx(canvasItem, codeItem, designName, width, height, gridX, gridY, g
     system.drawHighlight = true;
     system.copyItem = null;
     system.mirrorHorizontal = true;
-
 
     // Helper functions
     // Create and return a copy of an array item
@@ -634,7 +649,24 @@ function relayx(canvasItem, codeItem, designName, width, height, gridX, gridY, g
                 if (itemDesign[0] === "solid") {
                     dc.fillStyle = itemDesign[1];
                 }
-                dc.fillRect(layoutItem[2], layoutItem[3], layoutItem[4] - layoutItem[2], layoutItem[5] - layoutItem[3]);
+
+                // Drawing the border
+                dc.lineWidth = layoutItem[6];
+                if (dc.lineWidth > 0) {
+                    dc.beginPath();
+                    dc.rect(layoutItem[2], layoutItem[3], layoutItem[4] - layoutItem[2], layoutItem[5] - layoutItem[3]);
+                    dc.closePath();
+                    dc.strokeStyle = design.containerBorderColor;
+                    dc.stroke();
+                } else {
+                    dc.strokeStyle = "transparent";
+                    dc.lineWidth = 0;
+                }
+
+                dc.beginPath();
+                dc.rect(layoutItem[2], layoutItem[3], layoutItem[4] - layoutItem[2], layoutItem[5] - layoutItem[3]);
+                dc.closePath();
+                dc.fill();
             }
         } else {
             for (var index = 0; index < system.layoutSize; index++) {
@@ -643,29 +675,55 @@ function relayx(canvasItem, codeItem, designName, width, height, gridX, gridY, g
 
                 if (system.activeGroup !== null && system.groups[system.activeGroup].indexOf(layoutItem[0]) !== -1) {
                     if (mouse.selection[0] === layoutItem[0]) {
-                        dc.fillStyle = design.itemSelectionColor[2];
-                    } else {
                         dc.fillStyle = design.itemSelectionColor[1];
+                    } else {
+                        dc.fillStyle = design.itemSelectionColor[0];
                     }
-                    dc.strokeStyle = design.itemSelectionColor[0];
+
+                    // Drawing the border
+                    dc.lineWidth = layoutItem[6];
+                    if (dc.lineWidth > 0) {
+                        dc.beginPath();
+                        dc.rect(layoutItem[2], layoutItem[3], layoutItem[4] - layoutItem[2], layoutItem[5] - layoutItem[3]);
+                        dc.closePath();
+                        dc.strokeStyle = design.containerBorderColor;
+                        dc.stroke();
+                    } else {
+                        dc.strokeStyle = "transparent";
+                        dc.lineWidth = 0;
+                    }
+
                     dc.beginPath();
                     dc.rect(layoutItem[2], layoutItem[3], layoutItem[4] - layoutItem[2], layoutItem[5] - layoutItem[3]);
                     dc.closePath();
                     dc.fill();
-                    dc.stroke();
                 } else if (mouse.selection[0] === layoutItem[0]) {
-                    dc.fillStyle = design.itemSelectionColor[1];
-                    dc.strokeStyle = design.itemSelectionColor[0];
+                    // Drawing the border
+                    dc.lineWidth = layoutItem[6];
+                    if (dc.lineWidth > 0) {
+                        dc.beginPath();
+                        dc.rect(layoutItem[2], layoutItem[3], layoutItem[4] - layoutItem[2], layoutItem[5] - layoutItem[3]);
+                        dc.closePath();
+                        dc.strokeStyle = design.containerBorderColor;
+                        dc.stroke();
+                    } else {
+                        dc.strokeStyle = "transparent";
+                        dc.lineWidth = 0;
+                    }
+
+                    dc.fillStyle = design.itemSelectionColor[0];
                     dc.beginPath();
                     dc.rect(layoutItem[2], layoutItem[3], layoutItem[4] - layoutItem[2], layoutItem[5] - layoutItem[3]);
                     dc.closePath();
                     dc.fill();
-                    dc.stroke();
                 } else {
                     if (itemDesign[0] === "solid") {
                         dc.fillStyle = itemDesign[1];
                     }
-                    dc.fillRect(layoutItem[2], layoutItem[3], layoutItem[4] - layoutItem[2], layoutItem[5] - layoutItem[3]);
+                    dc.beginPath();
+                    dc.rect(layoutItem[2], layoutItem[3], layoutItem[4] - layoutItem[2], layoutItem[5] - layoutItem[3]);
+                    dc.closePath();
+                    dc.fill();
                 }
             }
         }
@@ -781,7 +839,7 @@ function relayx(canvasItem, codeItem, designName, width, height, gridX, gridY, g
         }
 
         if (system.drawHighlight) {
-            dc.fillStyle = "rgba(255,200,0, 0.1)";
+            dc.fillStyle = design.hightlighterColor;
             dc.fillRect(Math.floor(mouse.x / system.gridX) * system.gridX, 0, system.gridX, canvas.height);
             dc.fillRect(0, Math.floor(mouse.y / system.gridY) * system.gridY, canvas.width, system.gridY);
         }
@@ -937,6 +995,75 @@ function relayx(canvasItem, codeItem, designName, width, height, gridX, gridY, g
             if (mouse.currentAction === "selection" || mouse.selection !== null) {
                 mouse.currentAction = "mirrorSelection";
             }
+        } else if (evt.keyCode === 171 || evt.keyCode === 107) {
+            // Plus sign on keyboard or plus on numpad
+            // id, designElementName, x, y, xEnd, yEnd, border, padding, margin, groupIndex
+            if (mouse.selection === null) {
+                return;
+            } else {
+                var targetIndex = 0;
+                if (system.expandMode === "border") {
+                    targetIndex = 6;
+                } else if (system.expandMode === "margin") {
+                    targetIndex = 7;
+                } else if (system.expandMode === "padding") {
+                    targetIndex = 8;
+                } else {
+                    return;
+                }
+
+                if (system.activeGroup !== null) {
+                    for (var index = 0; index < system.groups[system.activeGroup].length; index++) {
+                        var itemId = system.groups[system.activeGroup][index];
+                        for (var item = 0; item < system.layoutSize; item++) {
+                            if (system.layoutData[item][0] === itemId) {
+                                system.layoutData[item][targetIndex]++;
+                                break;
+                            }
+                        }
+                    }
+                } else {
+                    mouse.selection[targetIndex]++;
+                }
+                return;
+            }
+        } else if (evt.keyCode === 173 || evt.keyCode === 109) {
+            // Minus sign on keyboard or minus on numpad
+
+            if (mouse.selection === null) {
+                return;
+            } else {
+                var targetIndex = 0;
+                if (system.expandMode === "border") {
+                    targetIndex = 6;
+                } else if (system.expandMode === "margin") {
+                    targetIndex = 7;
+                } else if (system.expandMode === "padding") {
+                    targetIndex = 8;
+                } else {
+                    return;
+                }
+
+                if (system.activeGroup !== null) {
+                    for (var index = 0; index < system.groups[system.activeGroup].length; index++) {
+                        var itemId = system.groups[system.activeGroup][index];
+                        for (var item = 0; item < system.layoutSize; item++) {
+                            if (system.layoutData[item][0] === itemId) {
+                                if (system.layoutData[item][targetIndex] > 0) {
+                                    system.layoutData[item][targetIndex]--;
+                                }
+                                break;
+                            }
+                        }
+                    }
+                } else {
+                    if (mouse.selection[targetIndex] > 0) {
+                        mouse.selection[targetIndex]--;
+                    }
+                }
+
+                return;
+            }
         }
     }
 
@@ -982,6 +1109,15 @@ function relayx(canvasItem, codeItem, designName, width, height, gridX, gridY, g
             // X key, horizontal/vertical repeation
             system.mirrorHorizontal = !system.mirrorHorizontal;
             lg("system.mirrorHorizontal: " + system.mirrorHorizontal)
+        } else if (evt.keyCode === 66) {
+            // B key
+            system.expandMode = "border";
+        } else if (evt.keyCode === 77) {
+            // M key
+            system.expandMode = "margin";
+        } else if (evt.keyCode === 77) {
+            // P key
+            system.expandMode = "padding";
         }
 
         lg(evt.keyCode);
