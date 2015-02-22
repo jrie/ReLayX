@@ -913,7 +913,6 @@ function relayx(canvasItem, codeItem, designName, width, height, gridX, gridY, g
                     if (system.layoutData[item][0] === mouse.selection[0]) {
                         var hasNewSelection = false;
 
-                        var maxIndex = 0;
                         for (var groupIndex = 0; groupIndex < system.groups.length; groupIndex++) {
                             var itemIndex = system.groups[groupIndex].indexOf(mouse.selection[0]);
                             if (itemIndex !== -1) {
@@ -921,7 +920,6 @@ function relayx(canvasItem, codeItem, designName, width, height, gridX, gridY, g
                                     system.groups.splice(groupIndex, 1);
                                     system.activeGroup = null;
                                     mouse.selection = null;
-
                                 } else {
                                     system.groups[groupIndex].splice(itemIndex, 1);
                                     var lastIndex = system.groups[groupIndex][system.groups[groupIndex].length - 1];
