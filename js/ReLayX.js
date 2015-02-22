@@ -370,6 +370,15 @@ function relayx(canvasItem, codeItem, designName, width, height, gridX, gridY, g
 
                         // Dont use isPointInPath here as it would mess up with the mirror drawings
                         if (mX >= mStartX + offsetX && mX <= mEndX + offsetX && mY >= mStartY && mY <= mEndY) {
+
+                            // Check that we dont have any containers at this location
+                            for (var index = 0; index < system.layoutSize; index++) {
+                                var container = system.layoutData[index];
+                                if (mX >= container[2] && mX <= container[4] && mY >= container[3] && mY <= container[5]) {
+                                    return;
+                                }
+                            }
+                            // otherwise create the container at this position
                             createLayoutContainer(mStartX + offsetX, mStartY, mEndX + offsetX, mEndY);
                             break;
                         }
@@ -383,12 +392,21 @@ function relayx(canvasItem, codeItem, designName, width, height, gridX, gridY, g
 
                         // Dont use isPointInPath here as it would mess up with the mirror drawings
                         if (mX >= mStartX && mX <= mEndX && mY >= mStartY + offsetY && mY <= mEndY + offsetY) {
+
+                            // Check that we dont have any containers at this location
+                            for (var index = 0; index < system.layoutSize; index++) {
+                                var container = system.layoutData[index];
+                                if (mX >= container[2] && mX <= container[4] && mY >= container[3] && mY <= container[5]) {
+                                    return;
+                                }
+                            }
+
+                            // otherwise create the container at this position
                             createLayoutContainer(mStartX, mStartY + offsetY, mEndX, mEndY + offsetY);
                             break;
                         }
                     }
                 }
-
             }
 
             return;
