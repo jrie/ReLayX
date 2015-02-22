@@ -376,12 +376,15 @@ function relayx(canvasItem, codeItem, designName, width, height, gridX, gridY, g
                 var mStartY = mouse.selection[3];
                 var mEndX = mouse.selection[4];
                 var mEndY = mouse.selection[5];
+                var containerX = mEndX - mStartX;
+                var containerY = mEndY - mStartY;
+
                 if (system.mirrorHorizontal) {
                     var offsetGridX = mStartX - system.gridStartX;
                     var offsetX = 0;
 
-                    while (offsetX + (mEndX - mStartX) + offsetGridX <= system.gridEndX - mEndX) {
-                        offsetX += offsetGridX + (mEndX - mStartX);
+                    while (offsetX + containerX + offsetGridX <= system.gridEndX - mEndX) {
+                        offsetX += offsetGridX + containerX;
 
                         // Dont use isPointInPath here as it would mess up with the mirror drawings
                         if (mX >= mStartX + offsetX && mX <= mEndX + offsetX && mY >= mStartY && mY <= mEndY) {
@@ -394,7 +397,7 @@ function relayx(canvasItem, codeItem, designName, width, height, gridX, gridY, g
                                 }
                             }
                             // otherwise create the container at this position
-                            createLayoutContainer(mStartX + offsetX, mStartY, mEndX + offsetX, mEndY);
+                            createLayoutContainer(mStartX + offsetX, mStartY, mEndX + offsetX, mEndY, false);
                             break;
                         }
                     }
@@ -402,8 +405,8 @@ function relayx(canvasItem, codeItem, designName, width, height, gridX, gridY, g
                     var offsetGridY = mStartY - system.gridStartY;
                     var offsetY = 0;
 
-                    while (offsetY + (mEndY - mStartY) + offsetGridY <= system.gridEndY - mEndY) {
-                        offsetY += offsetGridY + (mEndY - mStartY);
+                    while (offsetY + containerY + offsetGridY <= system.gridEndY - mEndY) {
+                        offsetY += offsetGridY + containerY;
 
                         // Dont use isPointInPath here as it would mess up with the mirror drawings
                         if (mX >= mStartX && mX <= mEndX && mY >= mStartY + offsetY && mY <= mEndY + offsetY) {
@@ -417,7 +420,7 @@ function relayx(canvasItem, codeItem, designName, width, height, gridX, gridY, g
                             }
 
                             // otherwise create the container at this position
-                            createLayoutContainer(mStartX, mStartY + offsetY, mEndX, mEndY + offsetY);
+                            createLayoutContainer(mStartX, mStartY + offsetY, mEndX, mEndY + offsetY, false);
                             break;
                         }
                     }
@@ -509,21 +512,21 @@ function relayx(canvasItem, codeItem, designName, width, height, gridX, gridY, g
         mouse.endY = evt.clientY - mouse.offsetY + window.scrollY;
 
         if (mouse.currentAction === "selection") {
-            createLayoutContainer(mouse.startX, mouse.startY, mouse.endX, mouse.endY);
+            createLayoutContainer(mouse.startX, mouse.startY, mouse.endX, mouse.endY, false);
             mouse.currentAction = null;
         } else if (mouse.currentAction === "mirrorSelection") {
             if (system.mirrorHorizontal) {
                 var offsetGridX = mouse.startX - system.gridStartX;
                 var offsetX = 0;
                 if ((mouse.endX - mouse.startX) > mouse.threshold) {
-                    var containerId = createLayoutContainer(mouse.startX, mouse.startY, mouse.endX, mouse.endY);
+                    var containerId = createLayoutContainer(mouse.startX, mouse.startY, mouse.endX, mouse.endY, true);
                     system.groups.push([containerId]);
                     system.activeGroup = system.groups.length - 1;
                     system.layoutData[system.layoutSize - 1][9] = system.activeGroup;
 
                     while (offsetX + (mouse.endX - mouse.startX) + offsetGridX <= system.gridEndX - mouse.endX) {
                         offsetX += offsetGridX + (mouse.endX - mouse.startX);
-                        containerId = createLayoutContainer(mouse.startX + offsetX, mouse.startY, mouse.endX + offsetX, mouse.endY);
+                        containerId = createLayoutContainer(mouse.startX + offsetX, mouse.startY, mouse.endX + offsetX, mouse.endY, true);
                         system.groups[system.activeGroup].push(containerId);
                         system.layoutData[system.layoutSize - 1][9] = system.activeGroup;
                     }
@@ -532,14 +535,14 @@ function relayx(canvasItem, codeItem, designName, width, height, gridX, gridY, g
                 var offsetGridY = mouse.startY - system.gridStartY;
                 var offsetY = 0;
                 if ((mouse.endY - mouse.startY) > mouse.threshold) {
-                    var containerId = createLayoutContainer(mouse.startX, mouse.startY, mouse.endX, mouse.endY);
+                    var containerId = createLayoutContainer(mouse.startX, mouse.startY, mouse.endX, mouse.endY, true);
                     system.groups.push([containerId]);
                     system.activeGroup = system.groups.length - 1;
                     system.layoutData[system.layoutSize - 1][9] = system.activeGroup;
 
                     while (offsetY + (mouse.endY - mouse.startY) + offsetGridY <= system.gridEndY - mouse.endY) {
                         offsetY += offsetGridY + (mouse.endY - mouse.startY);
-                        containerId = createLayoutContainer(mouse.startX, mouse.startY + offsetY, mouse.endX, mouse.endY + offsetY);
+                        containerId = createLayoutContainer(mouse.startX, mouse.startY + offsetY, mouse.endX, mouse.endY + offsetY, true);
                         system.groups[system.activeGroup].push(containerId);
                         system.layoutData[system.layoutSize - 1][9] = system.activeGroup;
                     }
@@ -554,7 +557,7 @@ function relayx(canvasItem, codeItem, designName, width, height, gridX, gridY, g
         }
     }
 
-    function createLayoutContainer(mStartX, mStartY, mEndX, mEndY) {
+    function createLayoutContainer(mStartX, mStartY, mEndX, mEndY, fixedSize) {
         var itemStartX = 0;
         var itemEndX = 0;
         var itemStartY = 0;
@@ -572,8 +575,16 @@ function relayx(canvasItem, codeItem, designName, width, height, gridX, gridY, g
             } else {
                 mStartY = Math.floor(mStartY / system.gridY) * system.gridY;
             }
-            mEndX = Math.ceil(mEndX / system.gridX) * system.gridX;
-            mEndY = Math.ceil(mEndY / system.gridY) * system.gridY;
+
+            mtmpEndX = Math.ceil(mEndX / system.gridX) * system.gridX;
+            mtmpEndY = Math.ceil(mEndY / system.gridY) * system.gridY;
+
+            if (fixedSize) {
+                mtmpEndX = mEndX;
+                mtmpEndY = mEndY;
+            }
+            mEndX = mtmpEndX;
+            mEndY = mtmpEndY;
         }
 
         if (mStartX < mEndX) {
@@ -793,6 +804,9 @@ function relayx(canvasItem, codeItem, designName, width, height, gridX, gridY, g
             var mEndY = mouse.selection[5];
         }
 
+        var containerX = mEndX - mStartX;
+        var containerY = mEndY - mStartY;
+
         dc.beginPath();
         if (mouse.currentAction === "mirrorSelection") {
             if (system.mirrorHorizontal) {
@@ -801,10 +815,10 @@ function relayx(canvasItem, codeItem, designName, width, height, gridX, gridY, g
                 var offsetX = 0;
 
                 dc.rect(mStartX, mStartY, mEndX - mStartX, mEndY - mStartY);
-                if ((mEndX - mStartX) > mouse.threshold) {
-                    while (offsetX + (mEndX - mStartX) + offsetGridX <= system.gridEndX - mEndX) {
-                        offsetX += offsetGridX + (mEndX - mStartX);
-                        dc.rect(mStartX + offsetX, mStartY, mEndX - mStartX, mEndY - mStartY);
+                if (containerX > mouse.threshold) {
+                    while (offsetX + containerX + offsetGridX <= system.gridEndX - mEndX) {
+                        offsetX += offsetGridX + containerX;
+                        dc.rect(mStartX + offsetX, mStartY, containerX, containerY);
                     }
                 }
             } else {
@@ -813,10 +827,10 @@ function relayx(canvasItem, codeItem, designName, width, height, gridX, gridY, g
                 var offsetY = 0;
 
                 dc.rect(mStartX, mStartY, mEndX - mStartX, mEndY - mStartY);
-                if ((mEndY - mStartY) > mouse.threshold) {
-                    while (offsetY + (mEndY - mStartY) + offsetGridY <= system.gridEndY - mEndY) {
-                        offsetY += offsetGridY + (mEndY - mStartY);
-                        dc.rect(mStartX, mStartY + offsetY, mEndX - mStartX, mEndY - mStartY);
+                if (containerY > mouse.threshold) {
+                    while (offsetY + containerY + offsetGridY <= system.gridEndY - mEndY) {
+                        offsetY += offsetGridY + containerY;
+                        dc.rect(mStartX, mStartY + offsetY, containerX, containerY);
                     }
                 }
             }
@@ -1090,7 +1104,7 @@ function relayx(canvasItem, codeItem, designName, width, height, gridX, gridY, g
         } else if (evt.keyCode === 86) {
             // V key create a copy at cursor location
             if (system.copyItem !== null) {
-                createLayoutContainer(mouse.x, mouse.y, mouse.x + system.copyItem[4] - system.copyItem[2], mouse.y + system.copyItem[5] - system.copyItem[3]);
+                createLayoutContainer(mouse.x, mouse.y, mouse.x + system.copyItem[4] - system.copyItem[2], mouse.y + system.copyItem[5] - system.copyItem[3], true);
                 mouse.selection = system.layoutData[system.layoutSize - 1];
             }
         } else if (evt.keyCode === 68) {
