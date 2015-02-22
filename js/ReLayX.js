@@ -577,7 +577,7 @@ function relayx(canvasItem, codeItem, designName, width, height, gridX, gridY, g
             }
 
             mEndX = Math.ceil(mEndX / system.gridX) * system.gridX;
-            mEndY = Math.ceil(mEndY / system.gridY) * system.gridY;
+            mEndY = Math.floor(mEndY / system.gridY) * system.gridY;
         }
 
         if (mStartX < mEndX) {
