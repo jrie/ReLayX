@@ -92,10 +92,10 @@ function relayx(canvasItem, codeItem, designName, width, height, gridX, gridY, g
     mouse.threshold = 25;
     mouse.offsetX = canvas.offsetLeft + window.scrollY;
     mouse.offsetY = canvas.offsetTop + window.scrollX;
-    mouse.mStartX = 0;
-    mouse.mStartY = 0;
-    mouse.mEndX = 0;
-    mouse.mEndY = 0;
+    mouse.startX = 0;
+    mouse.startY = 0;
+    mouse.endX = 0;
+    mouse.endY = 0;
     mouse.selection = null;
     mouse.previousSelection = null;
     mouse.currentAction = null;
@@ -134,6 +134,7 @@ function relayx(canvasItem, codeItem, designName, width, height, gridX, gridY, g
     system.drawGrid = true;
     system.drawHighlight = true;
     system.copyItem = null;
+    system.mirrorHorizontal = true;
 
 
     // Helper functions
@@ -348,11 +349,51 @@ function relayx(canvasItem, codeItem, designName, width, height, gridX, gridY, g
     }
 
     function checkMouseDown(evt) {
-        mouse.mStartX = evt.clientX - mouse.offsetX + window.scrollX;
-        mouse.mStartY = evt.clientY - mouse.offsetY + window.scrollY;
+        mouse.startX = evt.clientX - mouse.offsetX + window.scrollX;
+        mouse.startY = evt.clientY - mouse.offsetY + window.scrollY;
         var mX = evt.clientX - mouse.offsetX + window.scrollX;
         var mY = evt.clientY - mouse.offsetY + window.scrollY;
         var hasSelection = false;
+
+        if (mouse.currentAction === "mirrorSelection") {
+            if (dc.isPointInPath(mX, mY)) {
+                lg("in")
+                var mStartX = mouse.selection[2];
+                var mStartY = mouse.selection[3];
+                var mEndX = mouse.selection[4];
+                var mEndY = mouse.selection[5];
+                if (system.mirrorHorizontal) {
+                    var offsetGridX = mStartX - system.gridStartX;
+                    var offsetX = 0;
+
+                    while (offsetX + (mEndX - mStartX) + offsetGridX <= system.gridEndX - mEndX) {
+                        offsetX += offsetGridX + (mEndX - mStartX);
+
+                        // Dont use isPointInPath here as it would mess up with the mirror drawings
+                        if (mX >= mStartX + offsetX && mX <= mEndX + offsetX && mY >= mStartY && mY <= mEndY) {
+                            createLayoutContainer(mStartX + offsetX, mStartY, mEndX + offsetX, mEndY);
+                            break;
+                        }
+                    }
+                } else {
+                    var offsetGridY = mStartY - system.gridStartY;
+                    var offsetY = 0;
+
+                    while (offsetY + (mEndY - mStartY) + offsetGridY <= system.gridEndY - mEndY) {
+                        offsetY += offsetGridY + (mEndY - mStartY);
+
+                        // Dont use isPointInPath here as it would mess up with the mirror drawings
+                        if (mX >= mStartX && mX <= mEndX && mY >= mStartY + offsetY && mY <= mEndY + offsetY) {
+                            createLayoutContainer(mStartX, mStartY + offsetY, mEndX, mEndY + offsetY);
+                            break;
+                        }
+                    }
+                }
+
+            }
+
+            return;
+        }
 
         if (mouse.selection !== null) {
             mouse.previousSelection = mouse.selection;
@@ -432,13 +473,48 @@ function relayx(canvasItem, codeItem, designName, width, height, gridX, gridY, g
     }
 
     function checkMouseUp(evt) {
-        mouse.mEndX = evt.clientX - mouse.offsetX + window.scrollX;
-        mouse.mEndY = evt.clientY - mouse.offsetY + window.scrollY;
+        mouse.endX = evt.clientX - mouse.offsetX + window.scrollX;
+        mouse.endY = evt.clientY - mouse.offsetY + window.scrollY;
 
         if (mouse.currentAction === "selection") {
-            createLayoutContainer(mouse.mStartX, mouse.mStartY, mouse.mEndX, mouse.mEndY);
+            createLayoutContainer(mouse.startX, mouse.startY, mouse.endX, mouse.endY);
             mouse.currentAction = null;
+        } else if (mouse.currentAction === "mirrorSelection") {
+            if (system.mirrorHorizontal) {
+                var offsetGridX = mouse.startX - system.gridStartX;
+                var offsetX = 0;
+                if ((mouse.endX - mouse.startX) > mouse.threshold) {
+                    var containerId = createLayoutContainer(mouse.startX, mouse.startY, mouse.endX, mouse.endY);
+                    system.groups.push([containerId]);
+                    system.activeGroup = system.groups.length - 1;
+                    system.layoutData[system.layoutSize - 1][9] = system.activeGroup;
+
+                    while (offsetX + (mouse.endX - mouse.startX) + offsetGridX <= system.gridEndX - mouse.endX) {
+                        offsetX += offsetGridX + (mouse.endX - mouse.startX);
+                        containerId = createLayoutContainer(mouse.startX + offsetX, mouse.startY, mouse.endX + offsetX, mouse.endY);
+                        system.groups[system.activeGroup].push(containerId);
+                        system.layoutData[system.layoutSize - 1][9] = system.activeGroup;
+                    }
+                }
+            } else {
+                var offsetGridY = mouse.startY - system.gridStartY;
+                var offsetY = 0;
+                if ((mouse.endY - mouse.startY) > mouse.threshold) {
+                    var containerId = createLayoutContainer(mouse.startX, mouse.startY, mouse.endX, mouse.endY);
+                    system.groups.push([containerId]);
+                    system.activeGroup = system.groups.length - 1;
+                    system.layoutData[system.layoutSize - 1][9] = system.activeGroup;
+
+                    while (offsetY + (mouse.endY - mouse.startY) + offsetGridY <= system.gridEndY - mouse.endY) {
+                        offsetY += offsetGridY + (mouse.endY - mouse.startY);
+                        containerId = createLayoutContainer(mouse.startX, mouse.startY + offsetY, mouse.endX, mouse.endY + offsetY);
+                        system.groups[system.activeGroup].push(containerId);
+                        system.layoutData[system.layoutSize - 1][9] = system.activeGroup;
+                    }
+                }
+            }
         }
+        mouse.currentAction = null;
 
         if (mouse.currentAction === "dragContainer" || mouse.currentAction === "dragGroup") {
             mouse.currentAction = "selected";
@@ -525,9 +601,10 @@ function relayx(canvasItem, codeItem, designName, width, height, gridX, gridY, g
         // id, designElementName, x, y, xEnd, yEnd, border, padding, margin, groupIndex
         system.layoutData.push([id, "containerElement", itemStartX, itemStartY, itemEndX, itemEndY, 0, 0, 0, -1]);
         system.layoutSize++;
+        return id;
     }
 
-    // Render the layout items
+// Render the layout items
     function renderLayoutItems() {
         var layoutItem = [];
         var itemDesign = [];
@@ -579,51 +656,93 @@ function relayx(canvasItem, codeItem, designName, width, height, gridX, gridY, g
         dc.strokeStyle = "#000";
         var previousFill = dc.fillStyle;
         dc.fillStyle = "rgba(255,255,255, 0.2)";
+        if (mouse.selection === null) {
+            if (mouse.startX < system.gridStartX) {
+                mouse.startX = system.gridStartX;
+            } else if (mouse.startX > system.gridEndX) {
+                mouse.startX = system.gridEndX;
+            }
 
-        if (mouse.mStartX < system.gridStartX) {
-            mouse.mStartX = system.gridStartX;
-        } else if (mouse.mStartX > system.gridEndX) {
-            mouse.mStartX = system.gridEndX;
-        }
+            if (mouse.startY < system.gridStartY) {
+                mouse.startY = system.gridStartY;
+            } else if (mouse.startY > system.gridEndY) {
+                mouse.startY = system.gridEndY;
+            }
 
-        if (mouse.mStartY < system.gridStartY) {
-            mouse.mStartY = system.gridStartY;
-        } else if (mouse.mStartY > system.gridEndY) {
-            mouse.mStartY = system.gridEndY;
-        }
+            var mStartX = mouse.startX;
+            var mStartY = mouse.startY;
+            var mEndX = Math.ceil(mouse.x / system.gridX) * system.gridX;
+            var mEndY = Math.ceil(mouse.y / system.gridY) * system.gridY;
 
-        var mEndX = Math.ceil(mouse.x / system.gridX) * system.gridX;
-        var mEndY = Math.ceil(mouse.y / system.gridY) * system.gridY;
+            if (mEndX > system.gridEndX) {
+                mEndX = system.gridEndX;
+            } else if (mEndX < system.gridStartX) {
+                mEndX = system.gridStartX;
+            }
 
-        if (mEndX > system.gridEndX) {
-            mEndX = system.gridEndX;
-        } else if (mEndX < system.gridStartX) {
-            mEndX = system.gridStartX;
-        }
+            if (mEndY > system.gridEndY) {
+                mEndY = system.gridEndY;
+            } else if (mEndY < system.gridStartY) {
+                mEndY = system.gridStartY;
+            }
 
-        if (mEndY > system.gridEndY) {
-            mEndY = system.gridEndY;
-        } else if (mEndY < system.gridStartY) {
-            mEndY = system.gridStartY;
+            dc.beginPath();
+            if (mouse.snapToGrid) {
+                if (mouse.startX > mouse.x) {
+                    var mStartX = Math.ceil(mouse.startX / system.gridX) * system.gridX;
+                } else {
+                    var mStartX = Math.floor(mouse.startX / system.gridX) * system.gridX;
+                }
+
+                if (mouse.startY > mouse.y) {
+                    var mStartY = Math.ceil(mouse.startY / system.gridY) * system.gridY;
+                } else {
+                    var mStartY = Math.floor(mouse.startY / system.gridY) * system.gridY;
+                }
+
+                dc.rect(mStartX, mStartY, mEndX - mStartX, mEndY - mStartY);
+            }
+
+            if (mouse.currentAction === "selection") {
+                dc.rect(mStartX, mStartY, mEndX - mStartX, mEndY - mStartY);
+            }
+            dc.closePath();
+            dc.stroke();
+            dc.fill();
+        } else {
+            var mStartX = mouse.selection[2];
+            var mStartY = mouse.selection[3];
+            var mEndX = mouse.selection[4];
+            var mEndY = mouse.selection[5];
         }
 
         dc.beginPath();
-        if (mouse.snapToGrid) {
-            if (mouse.mStartX > mouse.x) {
-                var mStartX = Math.ceil(mouse.mStartX / system.gridX) * system.gridX;
-            } else {
-                var mStartX = Math.floor(mouse.mStartX / system.gridX) * system.gridX;
-            }
+        if (mouse.currentAction === "mirrorSelection") {
+            if (system.mirrorHorizontal) {
+                // Repeat current selection horizontally
+                var offsetGridX = mStartX - system.gridStartX;
+                var offsetX = 0;
 
-            if (mouse.mStartY > mouse.y) {
-                var mStartY = Math.ceil(mouse.mStartY / system.gridY) * system.gridY;
+                dc.rect(mStartX, mStartY, mEndX - mStartX, mEndY - mStartY);
+                if ((mEndX - mStartX) > mouse.threshold) {
+                    while (offsetX + (mEndX - mStartX) + offsetGridX <= system.gridEndX - mEndX) {
+                        offsetX += offsetGridX + (mEndX - mStartX);
+                        dc.rect(mStartX + offsetX, mStartY, mEndX - mStartX, mEndY - mStartY);
+                    }
+                }
             } else {
-                var mStartY = Math.floor(mouse.mStartY / system.gridY) * system.gridY;
-            }
+                // Repeat current selection vertically
+                var offsetGridY = mStartY - system.gridStartY;
+                var offsetY = 0;
 
-            dc.rect(mStartX, mStartY, mEndX - mStartX, mEndY - mStartY);
-        } else {
-            dc.rect(mouse.mStartX, mouse.mStartY, mEndX - mouse.mStartX, mEndY - mouse.mStartY)
+                dc.rect(mStartX, mStartY, mEndX - mStartX, mEndY - mStartY);
+                if ((mEndY - mStartY) > mouse.threshold) {
+                    while (offsetY + (mEndY - mStartY) + offsetGridY <= system.gridEndY - mEndY) {
+                        offsetY += offsetGridY + (mEndY - mStartY);
+                        dc.rect(mStartX, mStartY + offsetY, mEndX - mStartX, mEndY - mStartY);
+                    }
+                }
+            }
         }
         dc.closePath();
         dc.stroke();
@@ -634,7 +753,7 @@ function relayx(canvasItem, codeItem, designName, width, height, gridX, gridY, g
 
 
 
-    // Mainloop
+// Mainloop
     function mainloop() {
         drawItem("background", 0, 1, 2, 3, false);
 
@@ -648,7 +767,7 @@ function relayx(canvasItem, codeItem, designName, width, height, gridX, gridY, g
             dc.fillRect(0, Math.floor(mouse.y / system.gridY) * system.gridY, canvas.width, system.gridY);
         }
 
-        if (mouse.currentAction === "selection") {
+        if (mouse.currentAction === "selection" || mouse.currentAction === "mirrorSelection") {
             drawSelection();
         }
         renderLayoutItems();
@@ -659,7 +778,7 @@ function relayx(canvasItem, codeItem, designName, width, height, gridX, gridY, g
     }
 
 
-    // Bind the mouse to the current window
+// Bind the mouse to the current window
     function handleMouseMove(evt) {
         var mousePreviousX = mouse.x;
         var mousePreviousY = mouse.y;
@@ -709,8 +828,13 @@ function relayx(canvasItem, codeItem, designName, width, height, gridX, gridY, g
     }
 
     function handleKeyboardDown(evt) {
+        if (evt.target.nodeName !== "BODY") {
+            return;
+        }
+
         if (mouse.selection !== null) {
             if (evt.keyCode === 46) {
+                // Delete key
                 for (var item = 0; item < system.layoutSize; item++) {
                     if (system.layoutData[item][0] === mouse.selection[0]) {
                         var hasNewSelection = false;
@@ -766,21 +890,20 @@ function relayx(canvasItem, codeItem, designName, width, height, gridX, gridY, g
             }
 
             if (evt.keyCode === 17) {
+                // Control key grouping of elements or ungrouping
                 if (mouse.currentAction === "selected") {
                     mouse.currentAction = "grouping";
                     return;
                 }
             }
-
         }
 
         if (evt.keyCode === 16) {
+            // Shift key snapping
             mouse.snapToGrid = true;
             //mouse.currentAction = null;
             return;
-        }
-
-        if (evt.keyCode === 89) {
+        } else if (evt.keyCode === 89) {
             // Y key, allows moving off items when pressend once, disables if pressed a second time
             if (mouse.selection !== null) {
                 if (mouse.currentAction !== "dragGroup") {
@@ -789,11 +912,22 @@ function relayx(canvasItem, codeItem, designName, width, height, gridX, gridY, g
                     mouse.currentAction = "selected";
                 }
             }
+        } else if (evt.keyCode === 32) {
+            // Space bar pressed, turns on repeatition
+            evt.preventDefault();
+            if (mouse.currentAction === "selection" || mouse.selection !== null) {
+                mouse.currentAction = "mirrorSelection";
+            }
         }
-
     }
 
+
+
     function handleKeyboardUp(evt) {
+        if (!evt.target.nodeName === "BODY") {
+            return;
+        }
+
         if (evt.keyCode === 17) {
             // Control key - cancels current action, for example selection
             mouse.currentAction = null;
@@ -816,6 +950,15 @@ function relayx(canvasItem, codeItem, designName, width, height, gridX, gridY, g
         } else if (evt.keyCode === 68) {
             // D key - toggle row/column hightlight on off
             system.drawHighlight = !system.drawHighlight;
+        } else if (evt.keyCode === 32) {
+            // Space key up, turn repeat action off
+            if (mouse.currentAction === "mirrorSelection") {
+                mouse.currentAction = "selection";
+            }
+        } else if (evt.keyCode === 88) {
+            // X key, horizontal/vertical repeation
+            system.mirrorHorizontal = !system.mirrorHorizontal;
+            lg("system.mirrorHorizontal: " + system.mirrorHorizontal)
         }
 
         lg(evt.keyCode);
@@ -828,7 +971,7 @@ function relayx(canvasItem, codeItem, designName, width, height, gridX, gridY, g
     document.addEventListener("keydown", handleKeyboardDown);
     document.addEventListener("keyup", handleKeyboardUp);
 
-    // Get the right offset values after window resizing
+// Get the right offset values after window resizing
     window.addEventListener("resize", function () {
         mouse.offsetX = canvas.offsetLeft;
         mouse.offsetY = canvas.offsetTop;
