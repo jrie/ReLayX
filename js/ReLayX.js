@@ -563,6 +563,10 @@ function relayx(canvasItem, codeItem, designName, width, height, gridX, gridY, g
         var itemStartY = 0;
         var itemEndY = 0;
 
+        var mtmpStartX = 0;
+        var mtmpStartY = 0;
+        var mtmpEndX = 0;
+        var mtmpEndY = 0;
         if (mouse.snapToGrid) {
             if (mStartX > mEndX) {
                 mStartX = Math.ceil(mStartX / system.gridX) * system.gridX;
@@ -575,16 +579,6 @@ function relayx(canvasItem, codeItem, designName, width, height, gridX, gridY, g
             } else {
                 mStartY = Math.floor(mStartY / system.gridY) * system.gridY;
             }
-
-            mtmpEndX = Math.ceil(mEndX / system.gridX) * system.gridX;
-            mtmpEndY = Math.ceil(mEndY / system.gridY) * system.gridY;
-
-            if (fixedSize) {
-                mtmpEndX = mEndX;
-                mtmpEndY = mEndY;
-            }
-            mEndX = mtmpEndX;
-            mEndY = mtmpEndY;
         }
 
         if (mStartX < mEndX) {
@@ -927,7 +921,7 @@ function relayx(canvasItem, codeItem, designName, width, height, gridX, gridY, g
                                     system.groups.splice(groupIndex, 1);
                                     system.activeGroup = null;
                                     mouse.selection = null;
-                                    maxIndex = system.groups.length;
+                                    maxIndex = groupIndex;
                                 } else {
                                     system.groups[groupIndex].splice(itemIndex, 1);
                                     var lastIndex = system.groups[groupIndex][system.groups[groupIndex].length - 1];
@@ -951,7 +945,7 @@ function relayx(canvasItem, codeItem, designName, width, height, gridX, gridY, g
                         if (maxIndex > 0) {
                             while (maxIndex--) {
                                 for (var layoutItem = 0; layoutItem < system.layoutSize; layoutItem++) {
-                                    if (system.layoutData[layoutItem][9] >= maxIndex) {
+                                    if (system.layoutData[layoutItem][9] > maxIndex) {
                                         system.layoutData[layoutItem][9]--;
                                     }
                                 }
