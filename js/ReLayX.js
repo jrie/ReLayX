@@ -52,7 +52,8 @@ function getDesign(designName, width, height) {
             design.dragMoveMouse = ["#fff", "#000", "round", "line", [0, 0, 1, 0, 12, 10, 12, 15, 5, 15]];
 
             design.itemSelectionColor = ["#fff", "#aa4a00", "#8a1a00"];
-            design.containerElement = ["solid", ["#3a0000"]];
+            design.containerElement = ["solid", ['rgba(56, 0, 0, 0.55)']];
+            design.gridStrokeColor = 'rgba(255,255,255, 0.2)';
 
             design.resizeRightBottom = [["line", "line"], ["solid", "solid"], [["#222"], ["#fff"]], [[10, 0, 10, 10, 0, 10, 10, 0], [7, 3, 7, 7, 3, 7, 7, 3]], [-12, -12]];
             return design;
@@ -324,7 +325,7 @@ function relayx(canvasItem, codeItem, designName, width, height, gridX, gridY, g
         var stepY = 0;
 
         dc.lineWidth = 0.5;
-        dc.strokeStyle = "rgba(255, 255, 255, 0.25)";
+        dc.strokeStyle = design.gridStrokeColor;
 
         dc.beginPath();
 
@@ -373,7 +374,11 @@ function relayx(canvasItem, codeItem, designName, width, height, gridX, gridY, g
             if (mouse.currentAction === "grouping") {
                 if (mouse.selection[9] === -1) {
                     if (mouse.previousSelection !== null && mouse.previousSelection[9] === -1) {
-                        system.groups.push([mouse.previousSelection[0], mouse.selection[0]]);
+                        if (mouse.previousSelection[0] !== mouse.selection[0]) {
+                            system.groups.push([mouse.previousSelection[0], mouse.selection[0]]);
+                        } else {
+                            system.groups.push([mouse.selection[0]]);
+                        }
                         system.activeGroup = system.groups.length - 1;
                         mouse.selection[9] = system.activeGroup;
                         mouse.previousSelection[9] = system.activeGroup;
@@ -383,6 +388,26 @@ function relayx(canvasItem, codeItem, designName, width, height, gridX, gridY, g
                     }
                 } else {
                     system.activeGroup = mouse.selection[9];
+                    if (mouse.previousSelection[0] === mouse.selection[0]) {
+                        for (var groupItem = 0; groupItem < system.groups[system.activeGroup].length; groupItem++) {
+                            if (system.groups[system.activeGroup][groupItem] === mouse.selection[0]) {
+                                system.groups[system.activeGroup].splice(groupItem, 1);
+
+                                if (system.groups[system.activeGroup].length === 1) {
+                                    for (var layoutItem = 0; layoutItem < system.layoutSize; layoutItem++) {
+                                        if (system.layoutData[layoutItem][0] === system.groups[system.activeGroup][0]) {
+                                            system.groups.splice(system.activeGroup, 1);
+                                            system.layoutData[layoutItem][9] = -1;
+                                            break;
+                                        }
+                                    }
+                                }
+                                system.activeGroup = null;
+                                break;
+                            }
+                        }
+                        mouse.selection[9] = -1;
+                    }
                 }
             } else {
                 if (mouse.selection[9] !== -1) {
@@ -627,7 +652,7 @@ function relayx(canvasItem, codeItem, designName, width, height, gridX, gridY, g
         mouse.x = evt.clientX - mouse.offsetX + window.scrollX;
         mouse.y = evt.clientY - mouse.offsetY + window.scrollY;
 
-        if (mouse.currentAction === "dragContainer") {
+        if (mouse.currentAction === "dragContainer" || (mouse.currentAction === "dragGroup" && system.activeGroup === null)) {
             mouse.selection[2] += mouse.x - mousePreviousX;
             mouse.selection[3] += mouse.y - mousePreviousY;
             mouse.selection[4] += mouse.x - mousePreviousX;
@@ -729,9 +754,6 @@ function relayx(canvasItem, codeItem, designName, width, height, gridX, gridY, g
             if (evt.keyCode === 17) {
                 if (mouse.currentAction === "selected") {
                     mouse.currentAction = "grouping";
-                    if (mouse.selection === null) {
-                        return;
-                    }
                     return;
                 }
             }
