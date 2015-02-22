@@ -397,7 +397,7 @@ function relayx(canvasItem, codeItem, designName, width, height, gridX, gridY, g
                                 }
                             }
                             // otherwise create the container at this position
-                            createLayoutContainer(mStartX + offsetX, mStartY, mEndX + offsetX, mEndY, false);
+                            createLayoutContainer(mStartX + offsetX, mStartY, mEndX + offsetX, mEndY);
                             break;
                         }
                     }
@@ -420,7 +420,7 @@ function relayx(canvasItem, codeItem, designName, width, height, gridX, gridY, g
                             }
 
                             // otherwise create the container at this position
-                            createLayoutContainer(mStartX, mStartY + offsetY, mEndX, mEndY + offsetY, false);
+                            createLayoutContainer(mStartX, mStartY + offsetY, mEndX, mEndY + offsetY);
                             break;
                         }
                     }
@@ -1088,7 +1088,7 @@ function relayx(canvasItem, codeItem, designName, width, height, gridX, gridY, g
         } else if (evt.keyCode === 86) {
             // V key create a copy at cursor location
             if (system.copyItem !== null) {
-                createLayoutContainer(mouse.x, mouse.y, mouse.x + system.copyItem[4] - system.copyItem[2], mouse.y + system.copyItem[5] - system.copyItem[3], true);
+                createLayoutContainer(mouse.x, mouse.y, mouse.x + system.copyItem[4] - system.copyItem[2], mouse.y + system.copyItem[5] - system.copyItem[3]);
                 mouse.selection = system.layoutData[system.layoutSize - 1];
             }
         } else if (evt.keyCode === 68) {
