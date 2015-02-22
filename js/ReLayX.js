@@ -653,6 +653,7 @@ function relayx(canvasItem, codeItem, designName, width, height, gridX, gridY, g
         var layoutItem = [];
         var itemDesign = [];
         var index = system.layoutSize;
+        dc.lineWidth = 0;
         if (mouse.selection === null) {
             for (var index = 0; index < system.layoutSize; index++) {
                 layoutItem = system.layoutData[index];
@@ -662,8 +663,8 @@ function relayx(canvasItem, codeItem, designName, width, height, gridX, gridY, g
                 }
 
                 // Drawing the border
-                dc.lineWidth = layoutItem[6];
-                if (dc.lineWidth > 0) {
+                if (layoutItem[6] !== 0) {
+                    dc.lineWidth = layoutItem[6];
                     dc.beginPath();
                     dc.rect(layoutItem[2], layoutItem[3], layoutItem[4] - layoutItem[2], layoutItem[5] - layoutItem[3]);
                     dc.closePath();
@@ -680,9 +681,23 @@ function relayx(canvasItem, codeItem, designName, width, height, gridX, gridY, g
                 dc.fill();
             }
         } else {
+
             for (var index = 0; index < system.layoutSize; index++) {
                 layoutItem = system.layoutData[index];
                 itemDesign = design[layoutItem[1]];
+
+                // Drawing the border
+                if (layoutItem[6] !== 0) {
+                    dc.lineWidth = layoutItem[6];
+                    dc.beginPath();
+                    dc.rect(layoutItem[2], layoutItem[3], layoutItem[4] - layoutItem[2], layoutItem[5] - layoutItem[3]);
+                    dc.closePath();
+                    dc.strokeStyle = design.containerBorderColor;
+                    dc.stroke();
+                } else {
+                    dc.strokeStyle = "transparent";
+                    dc.lineWidth = 0;
+                }
 
                 if (system.activeGroup !== null && system.groups[system.activeGroup].indexOf(layoutItem[0]) !== -1) {
                     if (mouse.selection[0] === layoutItem[0]) {
@@ -691,37 +706,11 @@ function relayx(canvasItem, codeItem, designName, width, height, gridX, gridY, g
                         dc.fillStyle = design.itemSelectionColor[0];
                     }
 
-                    // Drawing the border
-                    dc.lineWidth = layoutItem[6];
-                    if (dc.lineWidth > 0) {
-                        dc.beginPath();
-                        dc.rect(layoutItem[2], layoutItem[3], layoutItem[4] - layoutItem[2], layoutItem[5] - layoutItem[3]);
-                        dc.closePath();
-                        dc.strokeStyle = design.containerBorderColor;
-                        dc.stroke();
-                    } else {
-                        dc.strokeStyle = "transparent";
-                        dc.lineWidth = 0;
-                    }
-
                     dc.beginPath();
                     dc.rect(layoutItem[2], layoutItem[3], layoutItem[4] - layoutItem[2], layoutItem[5] - layoutItem[3]);
                     dc.closePath();
                     dc.fill();
                 } else if (mouse.selection[0] === layoutItem[0]) {
-                    // Drawing the border
-                    dc.lineWidth = layoutItem[6];
-                    if (dc.lineWidth > 0) {
-                        dc.beginPath();
-                        dc.rect(layoutItem[2], layoutItem[3], layoutItem[4] - layoutItem[2], layoutItem[5] - layoutItem[3]);
-                        dc.closePath();
-                        dc.strokeStyle = design.containerBorderColor;
-                        dc.stroke();
-                    } else {
-                        dc.strokeStyle = "transparent";
-                        dc.lineWidth = 0;
-                    }
-
                     dc.fillStyle = design.itemSelectionColor[0];
                     dc.beginPath();
                     dc.rect(layoutItem[2], layoutItem[3], layoutItem[4] - layoutItem[2], layoutItem[5] - layoutItem[3]);
@@ -962,7 +951,7 @@ function relayx(canvasItem, codeItem, designName, width, height, gridX, gridY, g
                         if (maxIndex > 0) {
                             while (maxIndex--) {
                                 for (var layoutItem = 0; layoutItem < system.layoutSize; layoutItem++) {
-                                    if (system.layoutData[layoutItem][9] > maxIndex) {
+                                    if (system.layoutData[layoutItem][9] >= maxIndex) {
                                         system.layoutData[layoutItem][9]--;
                                     }
                                 }
