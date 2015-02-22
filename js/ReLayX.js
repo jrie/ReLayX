@@ -89,13 +89,13 @@ function relayx(canvasItem, codeItem, designName, width, height, gridX, gridY, g
     //var mouse = {};
     mouse.x = 0;
     mouse.y = 0;
-    mouse.threshold = 50;
+    mouse.threshold = 25;
     mouse.offsetX = canvas.offsetLeft + window.scrollY;
     mouse.offsetY = canvas.offsetTop + window.scrollX;
-    mouse.actionStartX = 0;
-    mouse.actionStartY = 0;
-    mouse.actionEndX = 0;
-    mouse.actionEndY = 0;
+    mouse.mStartX = 0;
+    mouse.mStartY = 0;
+    mouse.mEndX = 0;
+    mouse.mEndY = 0;
     mouse.selection = null;
     mouse.previousSelection = null;
     mouse.currentAction = null;
@@ -132,6 +132,8 @@ function relayx(canvasItem, codeItem, designName, width, height, gridX, gridY, g
     system.groups = [];
     system.lastId = 0;
     system.drawGrid = true;
+    system.drawHighlight = true;
+    system.copyItem = null;
 
 
     // Helper functions
@@ -346,10 +348,10 @@ function relayx(canvasItem, codeItem, designName, width, height, gridX, gridY, g
     }
 
     function checkMouseDown(evt) {
-        mouse.actionStartX = evt.clientX - mouse.offsetX + window.scrollX;
-        mouse.actionStartY = evt.clientY - mouse.offsetY + window.scrollY;
-        var mX = evt.clientX - mouse.offsetX;
-        var mY = evt.clientY - mouse.offsetY;
+        mouse.mStartX = evt.clientX - mouse.offsetX + window.scrollX;
+        mouse.mStartY = evt.clientY - mouse.offsetY + window.scrollY;
+        var mX = evt.clientX - mouse.offsetX + window.scrollX;
+        var mY = evt.clientY - mouse.offsetY + window.scrollY;
         var hasSelection = false;
 
         if (mouse.selection !== null) {
@@ -362,7 +364,7 @@ function relayx(canvasItem, codeItem, designName, width, height, gridX, gridY, g
             layoutItem = system.layoutData[item];
 
             dc.beginPath();
-            dc.rect(layoutItem[2] - window.scrollX, layoutItem[3] - window.scrollY, layoutItem[4] - layoutItem[2], layoutItem[5] - layoutItem[3]);
+            dc.rect(layoutItem[2], layoutItem[3], layoutItem[4] - layoutItem[2], layoutItem[5] - layoutItem[3]);
             dc.closePath();
             if (dc.isPointInPath(mX, mY)) {
                 mouse.selection = layoutItem;
@@ -430,11 +432,11 @@ function relayx(canvasItem, codeItem, designName, width, height, gridX, gridY, g
     }
 
     function checkMouseUp(evt) {
-        mouse.actionEndX = evt.clientX - mouse.offsetX + window.scrollX;
-        mouse.actionEndY = evt.clientY - mouse.offsetY + window.scrollY;
+        mouse.mEndX = evt.clientX - mouse.offsetX + window.scrollX;
+        mouse.mEndY = evt.clientY - mouse.offsetY + window.scrollY;
 
         if (mouse.currentAction === "selection") {
-            createLayoutContainer();
+            createLayoutContainer(mouse.mStartX, mouse.mStartY, mouse.mEndX, mouse.mEndY);
             mouse.currentAction = null;
         }
 
@@ -443,42 +445,42 @@ function relayx(canvasItem, codeItem, designName, width, height, gridX, gridY, g
         }
     }
 
-    function createLayoutContainer() {
+    function createLayoutContainer(mStartX, mStartY, mEndX, mEndY) {
         var itemStartX = 0;
         var itemEndX = 0;
         var itemStartY = 0;
         var itemEndY = 0;
 
         if (mouse.snapToGrid) {
-            if (mouse.actionStartX > mouse.actionEndX) {
-                mouse.actionStartX = Math.ceil(mouse.actionStartX / system.gridX) * system.gridX;
+            if (mStartX > mEndX) {
+                mStartX = Math.ceil(mStartX / system.gridX) * system.gridX;
             } else {
-                mouse.actionStartX = Math.floor(mouse.actionStartX / system.gridX) * system.gridX;
+                mStartX = Math.floor(mStartX / system.gridX) * system.gridX;
             }
 
-            if (mouse.actionStartY > mouse.actionEndY) {
-                mouse.actionStartY = Math.ceil(mouse.actionStartY / system.gridY) * system.gridY;
+            if (mStartY > mEndY) {
+                mStartY = Math.ceil(mStartY / system.gridY) * system.gridY;
             } else {
-                mouse.actionStartY = Math.floor(mouse.actionStartY / system.gridY) * system.gridY;
+                mStartY = Math.floor(mStartY / system.gridY) * system.gridY;
             }
-            mouse.actionEndX = Math.ceil(mouse.actionEndX / system.gridX) * system.gridX;
-            mouse.actionEndY = Math.ceil(mouse.actionEndY / system.gridY) * system.gridY;
+            mEndX = Math.ceil(mEndX / system.gridX) * system.gridX;
+            mEndY = Math.ceil(mEndY / system.gridY) * system.gridY;
         }
 
-        if (mouse.actionStartX < mouse.actionEndX) {
-            itemStartX = mouse.actionStartX;
-            itemEndX = mouse.actionEndX;
+        if (mStartX < mEndX) {
+            itemStartX = mStartX;
+            itemEndX = mEndX;
         } else {
-            itemStartX = mouse.actionEndX;
-            itemEndX = mouse.actionStartX;
+            itemStartX = mEndX;
+            itemEndX = mStartX;
         }
 
-        if (mouse.actionStartY < mouse.actionEndY) {
-            itemStartY = mouse.actionStartY;
-            itemEndY = mouse.actionEndY;
+        if (mStartY < mEndY) {
+            itemStartY = mStartY;
+            itemEndY = mEndY;
         } else {
-            itemStartY = mouse.actionEndY;
-            itemEndY = mouse.actionStartY;
+            itemStartY = mEndY;
+            itemEndY = mStartY;
         }
 
         // Set the boundaries for the container inside the grid
@@ -575,18 +577,19 @@ function relayx(canvasItem, codeItem, designName, width, height, gridX, gridY, g
 
     function drawSelection() {
         dc.strokeStyle = "#000";
+        var previousFill = dc.fillStyle;
         dc.fillStyle = "rgba(255,255,255, 0.2)";
 
-        if (mouse.actionStartX < system.gridStartX) {
-            mouse.actionStartX = system.gridStartX;
-        } else if (mouse.actionStartX > system.gridEndX) {
-            mouse.actionStartX = system.gridEndX;
+        if (mouse.mStartX < system.gridStartX) {
+            mouse.mStartX = system.gridStartX;
+        } else if (mouse.mStartX > system.gridEndX) {
+            mouse.mStartX = system.gridEndX;
         }
 
-        if (mouse.actionStartY < system.gridStartY) {
-            mouse.actionStartY = system.gridStartY;
-        } else if (mouse.actionStartY > system.gridEndY) {
-            mouse.actionStartY = system.gridEndY;
+        if (mouse.mStartY < system.gridStartY) {
+            mouse.mStartY = system.gridStartY;
+        } else if (mouse.mStartY > system.gridEndY) {
+            mouse.mStartY = system.gridEndY;
         }
 
         var mEndX = Math.ceil(mouse.x / system.gridX) * system.gridX;
@@ -604,25 +607,29 @@ function relayx(canvasItem, codeItem, designName, width, height, gridX, gridY, g
             mEndY = system.gridStartY;
         }
 
+        dc.beginPath();
         if (mouse.snapToGrid) {
-            if (mouse.actionStartX > mouse.x) {
-                var mStartX = Math.ceil(mouse.actionStartX / system.gridX) * system.gridX;
+            if (mouse.mStartX > mouse.x) {
+                var mStartX = Math.ceil(mouse.mStartX / system.gridX) * system.gridX;
             } else {
-                var mStartX = Math.floor(mouse.actionStartX / system.gridX) * system.gridX;
+                var mStartX = Math.floor(mouse.mStartX / system.gridX) * system.gridX;
             }
 
-            if (mouse.actionStartY > mouse.y) {
-                var mStartY = Math.ceil(mouse.actionStartY / system.gridY) * system.gridY;
+            if (mouse.mStartY > mouse.y) {
+                var mStartY = Math.ceil(mouse.mStartY / system.gridY) * system.gridY;
             } else {
-                var mStartY = Math.floor(mouse.actionStartY / system.gridY) * system.gridY;
+                var mStartY = Math.floor(mouse.mStartY / system.gridY) * system.gridY;
             }
 
             dc.rect(mStartX, mStartY, mEndX - mStartX, mEndY - mStartY);
         } else {
-            dc.rect(mouse.actionStartX, mouse.actionStartY, mEndX - mouse.actionStartX, mEndY - mouse.actionStartY)
+            dc.rect(mouse.mStartX, mouse.mStartY, mEndX - mouse.mStartX, mEndY - mouse.mStartY)
         }
+        dc.closePath();
         dc.stroke();
         dc.fill();
+
+        dc.fillStyle = previousFill;
     }
 
 
@@ -630,8 +637,15 @@ function relayx(canvasItem, codeItem, designName, width, height, gridX, gridY, g
     // Mainloop
     function mainloop() {
         drawItem("background", 0, 1, 2, 3, false);
+
         if (system.drawGrid) {
             drawGrid(system.gridStartX, system.gridStartY, system.gridEndX, system.gridEndY);
+        }
+
+        if (system.drawHighlight) {
+            dc.fillStyle = "rgba(255,200,0, 0.1)";
+            dc.fillRect(Math.floor(mouse.x / system.gridX) * system.gridX, 0, system.gridX, canvas.height);
+            dc.fillRect(0, Math.floor(mouse.y / system.gridY) * system.gridY, canvas.width, system.gridY);
         }
 
         if (mouse.currentAction === "selection") {
@@ -646,7 +660,7 @@ function relayx(canvasItem, codeItem, designName, width, height, gridX, gridY, g
 
 
     // Bind the mouse to the current window
-    canvas.addEventListener("mousemove", function (evt) {
+    function handleMouseMove(evt) {
         var mousePreviousX = mouse.x;
         var mousePreviousY = mouse.y;
         mouse.x = evt.clientX - mouse.offsetX + window.scrollX;
@@ -687,9 +701,8 @@ function relayx(canvasItem, codeItem, designName, width, height, gridX, gridY, g
                     }
                 }
             }
-
         }
-    });
+    }
 
     function placeHolder() {
 
@@ -722,6 +735,7 @@ function relayx(canvasItem, codeItem, designName, width, height, gridX, gridY, g
                                             mouse.selection = system.layoutData[layoutIndex];
                                             mouse.previousSelection = null;
                                             hasNewSelection = true;
+                                            break;
                                         }
                                     }
                                 }
@@ -767,10 +781,13 @@ function relayx(canvasItem, codeItem, designName, width, height, gridX, gridY, g
         }
 
         if (evt.keyCode === 89) {
-            if (mouse.currentAction !== "dragGroup") {
-                mouse.currentAction = "dragGroup";
-            } else {
-                mouse.currentAction = "selected";
+            // Y key, allows moving off items when pressend once, disables if pressed a second time
+            if (mouse.selection !== null) {
+                if (mouse.currentAction !== "dragGroup") {
+                    mouse.currentAction = "dragGroup";
+                } else {
+                    mouse.currentAction = "selected";
+                }
             }
         }
 
@@ -778,17 +795,33 @@ function relayx(canvasItem, codeItem, designName, width, height, gridX, gridY, g
 
     function handleKeyboardUp(evt) {
         if (evt.keyCode === 17) {
+            // Control key - cancels current action, for example selection
             mouse.currentAction = null;
         } else if (evt.keyCode === 16) {
+            // Shift key - grid snapping off
             mouse.snapToGrid = false;
             return;
         } else if (evt.keyCode === 71) {
+            // G key toggles grid
             system.drawGrid = !system.drawGrid;
+        } else if (evt.keyCode === 67) {
+            // C key starts a copy
+            system.copyItem = mouse.selection;
+        } else if (evt.keyCode === 86) {
+            // V key create a copy at cursor location
+            if (system.copyItem !== null) {
+                createLayoutContainer(mouse.x, mouse.y, mouse.x + system.copyItem[4] - system.copyItem[2], mouse.y + system.copyItem[5] - system.copyItem[3]);
+                mouse.selection = system.layoutData[system.layoutSize - 1];
+            }
+        } else if (evt.keyCode === 68) {
+            // D key - toggle row/column hightlight on off
+            system.drawHighlight = !system.drawHighlight;
         }
 
         lg(evt.keyCode);
     }
 
+    canvas.addEventListener("mousemove", handleMouseMove);
     canvas.addEventListener("mousedown", checkMouseDown);
     canvas.addEventListener("mouseup", checkMouseUp);
     canvas.addEventListener("mouseout", placeHolder);
