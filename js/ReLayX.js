@@ -357,7 +357,6 @@ function relayx(canvasItem, codeItem, designName, width, height, gridX, gridY, g
 
         if (mouse.currentAction === "mirrorSelection") {
             if (dc.isPointInPath(mX, mY)) {
-                lg("in")
                 var mStartX = mouse.selection[2];
                 var mStartY = mouse.selection[3];
                 var mEndX = mouse.selection[4];
@@ -513,8 +512,9 @@ function relayx(canvasItem, codeItem, designName, width, height, gridX, gridY, g
                     }
                 }
             }
+
+            mouse.currentAction = null;
         }
-        mouse.currentAction = null;
 
         if (mouse.currentAction === "dragContainer" || mouse.currentAction === "dragGroup") {
             mouse.currentAction = "selected";
@@ -622,7 +622,7 @@ function relayx(canvasItem, codeItem, designName, width, height, gridX, gridY, g
             for (var index = 0; index < system.layoutSize; index++) {
                 layoutItem = system.layoutData[index];
                 itemDesign = design[layoutItem[1]];
-                if (system.activeGroup !== null && system.groups[system.activeGroup].indexOf(layoutItem[0]) !== -1) {
+                if (system.activeGroup !== null && system.layoutSize !== 0 && system.groups[system.activeGroup].indexOf(layoutItem[0]) !== -1) {
                     if (mouse.selection[0] === layoutItem[0]) {
                         dc.fillStyle = design.itemSelectionColor[2];
                     } else {
@@ -953,7 +953,11 @@ function relayx(canvasItem, codeItem, designName, width, height, gridX, gridY, g
         } else if (evt.keyCode === 32) {
             // Space key up, turn repeat action off
             if (mouse.currentAction === "mirrorSelection") {
-                mouse.currentAction = "selection";
+                if (mouse.selection === null) {
+                    mouse.currentAction = "selection";
+                } else {
+                    mouse.currentAction = "selected";
+                }
             }
         } else if (evt.keyCode === 88) {
             // X key, horizontal/vertical repeation
