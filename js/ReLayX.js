@@ -1,5 +1,5 @@
 // Design template generator
-function getDesign(designName, width, height, gridX, gridY) {
+function getDesign(designName, width, height) {
     // The design item
     var design = {};
 
@@ -53,6 +53,8 @@ function getDesign(designName, width, height, gridX, gridY) {
 
             design.itemSelectionColor = ["#fff", "#aa4a00", "#8a1a00"];
             design.containerElement = ["solid", ["#3a0000"]];
+
+            design.resizeRightBottom = [["line", "line"], ["solid", "solid"], [["#222"], ["#fff"]], [[10, 0, 10, 10, 0, 10, 10, 0], [7, 3, 7, 7, 3, 7, 7, 3]], [-12, -12]];
             return design;
             break;
     }
@@ -61,7 +63,7 @@ function getDesign(designName, width, height, gridX, gridY) {
 // Main ReLayX
 var system = {};
 var mouse = {};
-function relayx(canvasItem, codeItem, designName, width, height, gridX, gridY) {
+function relayx(canvasItem, codeItem, designName, width, height, gridX, gridY, gridStart, gridEnd) {
 
     window.requestAnimationFrame = window.requestAnimationFrame || window.mozRequestAnimationFrame || window.webkitRequestAnimationFrame || window.oRequestAnimationFrame;
 
@@ -104,6 +106,23 @@ function relayx(canvasItem, codeItem, designName, width, height, gridX, gridY) {
     //var system = {};
     system.width = width;
     system.height = height;
+
+    // Set the grid for the current canvas based on inputs or defaults
+    if (typeof (gridStart) === "object" && gridStart.length === 2) {
+        system.gridStartX = gridStart[0];
+        system.gridStartY = gridStart[1];
+    } else {
+        system.gridStartX = 0;
+        system.gridStartY = 0;
+    }
+    if (typeof (gridStart) === "object" && gridStart.length === 2) {
+        system.gridEndX = gridEnd[0];
+        system.gridEndY = gridEnd[1];
+    } else {
+        system.gridEndX = canvas.width;
+        system.gridEndY = canvas.height;
+    }
+
     system.gridX = gridX;
     system.gridY = gridY;
     system.layoutData = [];
@@ -111,6 +130,7 @@ function relayx(canvasItem, codeItem, designName, width, height, gridX, gridY) {
     system.activeGroup = null;
     system.groups = [];
     system.lastId = 0;
+    system.drawGrid = true;
 
 
     // Helper functions
@@ -169,7 +189,7 @@ function relayx(canvasItem, codeItem, designName, width, height, gridX, gridY) {
 
     // Draw an design item providing the indexes for
     // drawTypes (rect, line, circle), fillStyles index, colors Index, drawingCoordinate Index
-    function drawItem(designItemName, drawTypeIndex, styleIndex, colorIndex, drawingCoordsIndex) {
+    function drawItem(designItemName, drawTypeIndex, styleIndex, colorIndex, drawingCoordsIndex, offsetXY) {
         if (!design.hasOwnProperty(designItemName)) {
             lg("design name for drawing not defined: " + designItemName);
             return;
@@ -211,7 +231,7 @@ function relayx(canvasItem, codeItem, designName, width, height, gridX, gridY) {
                     if (parseFloat(drawType[1]) !== "NaN") {
                         dc.arc(coords[index][0], coords[index][1], drawType[1], 0, 6.3);
                     } else {
-                        lg("No circle size set for designItem: " + designItemName + " at index " + index);
+                        lg("No circle size set for designItem, use  \"circle_sizeInPx\" : " + designItemName + " at index " + index);
                         return;
                     }
                     break;
@@ -299,7 +319,7 @@ function relayx(canvasItem, codeItem, designName, width, height, gridX, gridY) {
     }
 
     // Draw the grid
-    function drawGrid(width, height) {
+    function drawGrid(startX, startY, endX, endY) {
         var stepX = 0;
         var stepY = 0;
 
@@ -308,15 +328,15 @@ function relayx(canvasItem, codeItem, designName, width, height, gridX, gridY) {
 
         dc.beginPath();
 
-        while (stepY <= height) {
-            dc.moveTo(0, stepY);
-            dc.lineTo(width, stepY);
+        while (stepY + startY <= endY) {
+            dc.moveTo(startX, stepY + startY);
+            dc.lineTo(endX, stepY + startY);
             stepY += gridY;
         }
 
-        while (stepX <= width) {
-            dc.moveTo(stepX, 0);
-            dc.lineTo(stepX, height);
+        while (stepX + startX <= endX) {
+            dc.moveTo(stepX + startX, startY);
+            dc.lineTo(stepX + startX, endY);
             stepX += gridX;
         }
 
@@ -341,7 +361,7 @@ function relayx(canvasItem, codeItem, designName, width, height, gridX, gridY) {
             layoutItem = system.layoutData[item];
 
             dc.beginPath();
-            dc.rect(layoutItem[2], layoutItem[3], layoutItem[4] - layoutItem[2], layoutItem[5] - layoutItem[3]);
+            dc.rect(layoutItem[2] - window.scrollX, layoutItem[3] - window.scrollY, layoutItem[4] - layoutItem[2], layoutItem[5] - layoutItem[3]);
             dc.closePath();
             if (dc.isPointInPath(mX, mY)) {
                 mouse.selection = layoutItem;
@@ -436,6 +456,28 @@ function relayx(canvasItem, codeItem, designName, width, height, gridX, gridY) {
             itemEndY = mouse.actionStartY;
         }
 
+        // Set the boundaries for the container inside the grid
+        if (itemStartX < system.gridStartX) {
+            itemStartX = system.gridStartX;
+        }
+
+        if (itemStartY < system.gridStartY) {
+            itemStartY = system.gridStartY;
+        }
+
+        if (itemEndX < system.gridStartX) {
+            itemEndX = system.gridStartX;
+        } else if (itemEndX > system.gridEndX) {
+            itemEndX = system.gridEndX;
+        }
+
+        if (itemEndY < system.gridStartY) {
+            itemEndY = system.gridStartY;
+        } else if (itemEndY > system.gridEndY) {
+            itemEndY = system.gridEndY;
+        }
+
+        // If the selection height or width is smaller then the threshold, cancel the action
         if (itemEndX - itemStartX < mouse.threshold) {
             return;
         } else if (itemEndY - itemStartY < mouse.threshold) {
@@ -509,6 +551,34 @@ function relayx(canvasItem, codeItem, designName, width, height, gridX, gridY) {
     function drawSelection() {
         dc.strokeStyle = "#000";
         dc.fillStyle = "rgba(255,255,255, 0.2)";
+
+        if (mouse.actionStartX < system.gridStartX) {
+            mouse.actionStartX = system.gridStartX;
+        } else if (mouse.actionStartX > system.gridEndX) {
+            mouse.actionStartX = system.gridEndX;
+        }
+
+        if (mouse.actionStartY < system.gridStartY) {
+            mouse.actionStartY = system.gridStartY;
+        } else if (mouse.actionStartY > system.gridEndY) {
+            mouse.actionStartY = system.gridEndY;
+        }
+
+        var mEndX = Math.ceil(mouse.x / system.gridX) * system.gridX;
+        var mEndY = Math.ceil(mouse.y / system.gridY) * system.gridY;
+
+        if (mEndX > system.gridEndX) {
+            mEndX = system.gridEndX;
+        } else if (mEndX < system.gridStartX) {
+            mEndX = system.gridStartX;
+        }
+
+        if (mEndY > system.gridEndY) {
+            mEndY = system.gridEndY;
+        } else if (mEndY < system.gridStartY) {
+            mEndY = system.gridStartY;
+        }
+
         if (mouse.snapToGrid) {
             if (mouse.actionStartX > mouse.x) {
                 var mStartX = Math.ceil(mouse.actionStartX / system.gridX) * system.gridX;
@@ -522,11 +592,9 @@ function relayx(canvasItem, codeItem, designName, width, height, gridX, gridY) {
                 var mStartY = Math.floor(mouse.actionStartY / system.gridY) * system.gridY;
             }
 
-            var mEndX = Math.ceil(mouse.x / system.gridX) * system.gridX;
-            var mEndY = Math.ceil(mouse.y / system.gridY) * system.gridY;
             dc.rect(mStartX, mStartY, mEndX - mStartX, mEndY - mStartY);
         } else {
-            dc.rect(mouse.actionStartX, mouse.actionStartY, mouse.x - mouse.actionStartX, mouse.y - mouse.actionStartY);
+            dc.rect(mouse.actionStartX, mouse.actionStartY, mEndX - mouse.actionStartX, mEndY - mouse.actionStartY)
         }
         dc.stroke();
         dc.fill();
@@ -536,8 +604,11 @@ function relayx(canvasItem, codeItem, designName, width, height, gridX, gridY) {
 
     // Mainloop
     function mainloop() {
-        drawItem("background", 0, 1, 2, 3);
-        drawGrid(system.width, system.height);
+        drawItem("background", 0, 1, 2, 3, false);
+        if (system.drawGrid) {
+            drawGrid(system.gridStartX, system.gridStartY, system.gridEndX, system.gridEndY);
+        }
+
         if (mouse.currentAction === "selection") {
             drawSelection();
         }
@@ -689,6 +760,8 @@ function relayx(canvasItem, codeItem, designName, width, height, gridX, gridY) {
         } else if (evt.keyCode === 16) {
             mouse.snapToGrid = false;
             return;
+        } else if (evt.keyCode === 71) {
+            system.drawGrid = !system.drawGrid;
         }
 
         lg(evt.keyCode);
