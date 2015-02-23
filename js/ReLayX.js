@@ -151,6 +151,7 @@ function relayx(canvasItem, codeItem, designName, width, height, gridX, gridY, g
     system.drawHighlight = true;
     system.copyItem = null;
     system.mirrorHorizontal = true;
+    system.expandMode = "border";
 
     // Helper functions
     // Create and return a copy of an array item
