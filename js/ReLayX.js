@@ -157,6 +157,8 @@ function relayx(canvasItem, codeItem, designName, width, height, gridX, gridY, g
     system.copyItem = null;
     system.mirrorHorizontal = true;
     system.expandMode = "border";
+    system.spaceGridX = 0;
+    system.spaceGridY = 0;
 
     // Helper functions
     // Create and return a copy of an array item
@@ -389,48 +391,157 @@ function relayx(canvasItem, codeItem, designName, width, height, gridX, gridY, g
                 var containerY = mEndY - mStartY;
 
                 if (system.mirrorHorizontal) {
-                    var offsetGridX = mStartX - system.gridStartX;
-                    var offsetX = 0;
 
-                    while (offsetX + containerX + offsetGridX <= system.gridEndX - mEndX) {
-                        offsetX += offsetGridX + containerX;
+                    if (system.spaceGridX > 0) {
+                        var offsetGridX = system.spaceGridX;
+                        var offsetX = containerX + system.spaceGridX;
+                    } else {
+                        var offsetGridX = mStartX - system.gridStartX;
+                        var offsetX = 0;
+                    }
 
-                        // Dont use isPointInPath here as it would mess up with the mirror drawings
-                        if (mX >= mStartX + offsetX && mX <= mEndX + offsetX && mY >= mStartY && mY <= mEndY) {
+                    var startX = system.gridStartX + system.spaceGridX;
+                    if (mX > mStartX) {
 
-                            // Check that we dont have any containers at this location
-                            for (var index = 0; index < system.layoutSize; index++) {
-                                var container = system.layoutData[index];
-                                if (mX >= container[2] && mX <= container[4] && mY >= container[3] && mY <= container[5]) {
-                                    return;
+                        while (startX + offsetX <= system.gridEndX - containerX) {
+
+                            // Dont use isPointInPath here as it would mess up with the mirror drawings
+                            if (mX >= startX + offsetX && mX <= mEndX + offsetX && mY >= mStartY && mY <= mEndY) {
+
+                                // Check that we dont have any containers at this location
+                                for (var index = 0; index < system.layoutSize; index++) {
+                                    var container = system.layoutData[index];
+                                    if (mX >= container[2] && mX <= container[4] && mY >= container[3] && mY <= container[5]) {
+                                        return;
+                                    }
                                 }
+                                // otherwise create the container at this position
+                                createLayoutContainer(mStartX + offsetX, mStartY, mEndX + offsetX, mEndY);
+                                break;
                             }
-                            // otherwise create the container at this position
-                            createLayoutContainer(mStartX + offsetX, mStartY, mEndX + offsetX, mEndY);
-                            break;
+
+                            offsetX += offsetGridX + containerX;
+                        }
+                    } else if (system.spaceGridX !== 0) {
+                        startX = mStartX;
+                        offsetX = containerX + system.spaceGridX;
+
+                        while (startX - containerX >= system.gridStartX) {
+
+                            // Dont use isPointInPath here as it would mess up with the mirror drawings
+                            if (mX >= startX - offsetX && mX <= mEndX - offsetX && mY >= mStartY && mY <= mEndY) {
+
+                                // Check that we dont have any containers at this location
+                                for (var index = 0; index < system.layoutSize; index++) {
+                                    var container = system.layoutData[index];
+                                    if (mX >= container[2] && mX <= container[4] && mY >= container[3] && mY <= container[5]) {
+                                        return;
+                                    }
+                                }
+                                // otherwise create the container at this position
+                                createLayoutContainer(mStartX - offsetX, mStartY, mEndX - offsetX, mEndY);
+                                break;
+                            }
+
+                            offsetX += containerX + system.spaceGridX;
+                        }
+                    } else {
+                        var offsetGridX = mStartX - system.gridStartX;
+
+                        while (offsetX + containerX + offsetGridX <= system.gridEndX - mEndX) {
+                            offsetX += offsetGridX + containerX;
+
+                            // Dont use isPointInPath here as it would mess up with the mirror drawings
+                            if (mX >= mStartX + offsetX && mX <= mEndX + offsetX && mY >= mStartY && mY <= mEndY) {
+
+                                // Check that we dont have any containers at this location
+                                for (var index = 0; index < system.layoutSize; index++) {
+                                    var container = system.layoutData[index];
+                                    if (mX >= container[2] && mX <= container[4] && mY >= container[3] && mY <= container[5]) {
+                                        return;
+                                    }
+                                }
+                                // otherwise create the container at this position
+                                createLayoutContainer(mStartX + offsetX, mStartY, mEndX + offsetX, mEndY);
+                                break;
+                            }
                         }
                     }
+
+                    lg(offsetX)
+
+
                 } else {
-                    var offsetGridY = mStartY - system.gridStartY;
-                    var offsetY = 0;
+                    if (system.spaceGridY > 0) {
+                        var offsetGridY = system.spaceGridY;
+                        var offsetY = containerY + system.spaceGridY;
+                    } else {
+                        var offsetGridY = mStartY - system.gridStartY;
+                        var offsetY = 0;
+                    }
+                    if (mY > mStartY) {
+                        var startY = system.gridStartY + system.spaceGridY;
+                        while (startY + offsetY <= system.gridEndY - containerY) {
+                            // Dont use isPointInPath here as it would mess up with the mirror drawings
+                            if (mX >= mStartX && mX <= mEndX && mY >= startY + offsetY && mY <= mEndY + offsetY) {
 
-                    while (offsetY + containerY + offsetGridY <= system.gridEndY - mEndY) {
-                        offsetY += offsetGridY + containerY;
-
-                        // Dont use isPointInPath here as it would mess up with the mirror drawings
-                        if (mX >= mStartX && mX <= mEndX && mY >= mStartY + offsetY && mY <= mEndY + offsetY) {
-
-                            // Check that we dont have any containers at this location
-                            for (var index = 0; index < system.layoutSize; index++) {
-                                var container = system.layoutData[index];
-                                if (mX >= container[2] && mX <= container[4] && mY >= container[3] && mY <= container[5]) {
-                                    return;
+                                // Check that we dont have any containers at this location
+                                for (var index = 0; index < system.layoutSize; index++) {
+                                    var container = system.layoutData[index];
+                                    if (mX >= container[2] && mX <= container[4] && mY >= container[3] && mY <= container[5]) {
+                                        return;
+                                    }
                                 }
+
+                                // otherwise create the container at this position
+                                createLayoutContainer(mStartX, mStartY + offsetY, mEndX, mEndY + offsetY);
+                                break;
+                            }
+                            offsetY += offsetGridY + containerY;
+                        }
+                    } else if (system.spaceGridY !== 0) {
+                        startY = mStartY;
+                        offsetY = containerY + system.spaceGridY;
+
+                        while (startY - containerY >= system.gridStartY) {
+
+                            // Dont use isPointInPath here as it would mess up with the mirror drawings
+                            if (mX >= mStartX && mX <= mEndX && mY >= startY - offsetY && mY <= mEndY - offsetY) {
+
+                                // Check that we dont have any containers at this location
+                                for (var index = 0; index < system.layoutSize; index++) {
+                                    var container = system.layoutData[index];
+                                    if (mX >= container[2] && mX <= container[4] && mY >= container[3] && mY <= container[5]) {
+                                        return;
+                                    }
+                                }
+                                // otherwise create the container at this position
+                                createLayoutContainer(mStartX, mStartY - offsetY, mEndX, mEndY - offsetY);
+                                break;
                             }
 
-                            // otherwise create the container at this position
-                            createLayoutContainer(mStartX, mStartY + offsetY, mEndX, mEndY + offsetY);
-                            break;
+                            offsetY += containerY + system.spaceGridY;
+                        }
+                    } else {
+                        var offsetGridY = mStartY - system.gridStartY;
+
+                        while (offsetY + containerY + offsetGridY <= system.gridEndY - mEndY) {
+                            offsetY += offsetGridY + containerY;
+
+                            // Dont use isPointInPath here as it would mess up with the mirror drawings
+                            if (mX >= mStartX && mX <= mEndX && mY >= mStartY + offsetY && mY <= mEndY + offsetY) {
+
+                                // Check that we dont have any containers at this location
+                                for (var index = 0; index < system.layoutSize; index++) {
+                                    var container = system.layoutData[index];
+                                    if (mX >= container[2] && mX <= container[4] && mY >= container[3] && mY <= container[5]) {
+                                        return;
+                                    }
+                                }
+                                // otherwise create the container at this position
+                                createLayoutContainer(mStartX, mStartY + offsetY, mEndX, mEndY + offsetY);
+                                break;
+                            }
                         }
                     }
                 }
@@ -771,8 +882,8 @@ function relayx(canvasItem, codeItem, designName, width, height, gridX, gridY, g
 
             dc.beginPath();
             if (mouse.snapToGrid) {
-                var mStartY = Math.floor(mouse.startY / system.gridY) * system.gridY;
                 var mStartX = Math.floor(mouse.startX / system.gridX) * system.gridX;
+                var mStartY = Math.floor(mouse.startY / system.gridY) * system.gridY;
                 var mEndX = Math.ceil(mouse.x / system.gridX) * system.gridX;
                 var mEndY = Math.ceil(mouse.y / system.gridY) * system.gridY;
                 dc.rect(mStartX, mStartY, mEndX - mStartX, mEndY - mStartY);
@@ -798,27 +909,59 @@ function relayx(canvasItem, codeItem, designName, width, height, gridX, gridY, g
         if (mouse.currentAction === "mirrorSelection") {
             if (system.mirrorHorizontal) {
                 // Repeat current selection horizontally
-                var offsetGridX = mStartX - system.gridStartX;
-                var offsetX = 0;
 
+                if (system.spaceGridX > 0) {
+                    var offsetGridX = system.spaceGridX;
+                } else {
+                    var offsetGridX = mStartX - system.gridStartX;
+                }
+
+                var offsetX = 0;
                 dc.rect(mStartX, mStartY, mEndX - mStartX, mEndY - mStartY);
+
                 if (containerX > mouse.threshold) {
                     while (offsetX + containerX + offsetGridX <= system.gridEndX - mEndX) {
                         offsetX += offsetGridX + containerX;
                         dc.rect(mStartX + offsetX, mStartY, containerX, containerY);
                     }
+
+                    if (system.spaceGridX > 0) {
+                        offsetX = containerX + system.spaceGridX;
+                        var startX = mStartX - offsetX;
+                        while (startX > system.gridStartX) {
+                            dc.rect(mStartX - offsetX, mStartY, containerX, containerY);
+                            offsetX += system.spaceGridX + containerX;
+                            startX -= system.spaceGridX + containerX;
+                        }
+                    }
                 }
             } else {
                 // Repeat current selection vertically
-                var offsetGridY = mStartY - system.gridStartY;
-                var offsetY = 0;
+                if (system.spaceGridY > 0) {
+                    var offsetGridY = system.spaceGridY;
+                } else {
+                    var offsetGridY = mStartY - system.gridStartY;
+                }
 
+                var offsetY = 0;
                 dc.rect(mStartX, mStartY, mEndX - mStartX, mEndY - mStartY);
+
                 if (containerY > mouse.threshold) {
                     while (offsetY + containerY + offsetGridY <= system.gridEndY - mEndY) {
                         offsetY += offsetGridY + containerY;
                         dc.rect(mStartX, mStartY + offsetY, containerX, containerY);
                     }
+
+                    if (system.spaceGridY > 0) {
+                        offsetY = containerY + system.spaceGridY;
+                        var startY = mStartY - offsetY;
+                        while (startY > system.gridStartY) {
+                            dc.rect(mStartX, mStartY - offsetY, containerX, containerY);
+                            offsetY += system.spaceGridY + containerY;
+                            startY -= system.spaceGridY + containerY;
+                        }
+                    }
+
                 }
             }
         }
@@ -1076,7 +1219,7 @@ function relayx(canvasItem, codeItem, designName, width, height, gridX, gridY, g
         }
 
         if (evt.keyCode === 17) {
-            // Control key - cancels current action, for example selection
+            // Control key - cancels current action, for example selection or container creation
             mouse.currentAction = null;
         } else if (evt.keyCode === 16) {
             // Shift key - grid snapping off
@@ -1085,9 +1228,11 @@ function relayx(canvasItem, codeItem, designName, width, height, gridX, gridY, g
         } else if (evt.keyCode === 71) {
             // G key toggles grid
             system.drawGrid = !system.drawGrid;
+            lg("Switching grid " + (system.drawGrid ? "on" : "off"));
         } else if (evt.keyCode === 67) {
             // C key starts a copy
             system.copyItem = mouse.selection;
+            lg("Taking a copy of layout item: " + system.copyItem[0]);
         } else if (evt.keyCode === 86) {
             // V key create a copy at cursor location
             if (system.copyItem !== null) {
@@ -1097,6 +1242,7 @@ function relayx(canvasItem, codeItem, designName, width, height, gridX, gridY, g
         } else if (evt.keyCode === 68) {
             // D key - toggle row/column hightlight on off
             system.drawHighlight = !system.drawHighlight;
+            lg("Switching colum/row highlighting " + (system.drawHighlight ? "on" : "off"));
         } else if (evt.keyCode === 32) {
             // Space key up, turn repeat action off
             if (mouse.currentAction === "mirrorSelection") {
@@ -1109,19 +1255,46 @@ function relayx(canvasItem, codeItem, designName, width, height, gridX, gridY, g
         } else if (evt.keyCode === 88) {
             // X key, horizontal/vertical repeation
             system.mirrorHorizontal = !system.mirrorHorizontal;
-            lg("system.mirrorHorizontal: " + system.mirrorHorizontal)
+            lg("Setting mirroring to: " + (system.mirrorHorizontal ? "Horizontally" : "Vertically"));
         } else if (evt.keyCode === 66) {
             // B key
             system.expandMode = "border";
+            lg("Setting border expand mode.");
         } else if (evt.keyCode === 77) {
             // M key
             system.expandMode = "margin";
+            lg("Setting margin expand mode.");
         } else if (evt.keyCode === 77) {
             // P key
             system.expandMode = "padding";
-        }
+            lg("Setting padding expand mode.");
+        } else if (evt.keyCode === 69) {
+            system.spaceGridX = 0;
+            system.spaceGridY = 0;
+            lg("Mirror spacing resetted on both axis to 0.");
+        } else if (evt.keyCode === 87) {
+            if (system.mirrorHorizontal) {
+                system.spaceGridX += system.gridX;
+            } else {
+                system.spaceGridY += system.gridY;
+            }
+            lg("Increased grid spacing to: " + system.spaceGridX + " X and " + system.spaceGridY + " Y");
+        } else if (evt.keyCode === 81) {
+            if (system.mirrorHorizontal) {
+                system.spaceGridX -= system.gridX;
+                if (system.spaceGridX < 0) {
+                    system.spaceGridX = 0;
+                }
+            } else {
+                system.spaceGridY -= system.gridY;
+                if (system.spaceGridY < 0) {
+                    system.spaceGridY = 0;
+                }
+            }
+            lg("Decreased grid spacing to: " + system.spaceGridX + " X and " + system.spaceGridY + " Y");
 
-        lg(evt.keyCode);
+            lg(evt.keyCode);
+        }
     }
 
     canvas.addEventListener("mousemove", handleMouseMove);
