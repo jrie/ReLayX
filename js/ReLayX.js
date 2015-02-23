@@ -647,38 +647,81 @@ function relayx(canvasItem, codeItem, designName, width, height, gridX, gridY, g
                 var mStartY = mouse.startY;
                 var mEndX = mouse.endX;
                 var mEndY = mouse.endY;
+
             }
 
+            var containerX = mEndX - mStartX;
+            var containerY = mEndY - mStartY;
+
             if (system.mirrorHorizontal) {
-                var offsetGridX = mStartX - system.gridStartX;
-                var offsetX = 0;
-                if ((mEndX - mStartX) > mouse.threshold) {
+
+                if (containerX > mouse.threshold) {
                     var containerId = createLayoutContainer(mStartX, mStartY, mEndX, mEndY);
                     system.groups.push([containerId]);
                     system.activeGroup = system.groups.length - 1;
                     system.layoutData[system.layoutSize - 1][9] = system.activeGroup;
 
-                    while (offsetX + (mEndX - mStartX) + offsetGridX <= system.gridEndX - mEndX) {
-                        offsetX += offsetGridX + (mEndX - mStartX);
+                    if (system.spaceGridX > 0) {
+                        var offsetGridX = offsetGridX = system.spaceGridX;
+                        var offsetX = 0;
+                    } else {
+                        var offsetGridX = mStartX - system.gridStartX;
+                        var offsetX = 0;
+                    }
+
+                    while (offsetX + containerX + offsetGridX <= system.gridEndX - mEndX) {
+                        offsetX += offsetGridX + containerX;
                         containerId = createLayoutContainer(mStartX + offsetX, mStartY, mEndX + offsetX, mEndY);
                         system.groups[system.activeGroup].push(containerId);
                         system.layoutData[system.layoutSize - 1][9] = system.activeGroup;
                     }
+
+                    if (system.spaceGridX > 0) {
+                        var startX = mStartX;
+                        var offsetX = offsetGridX + containerX;
+
+                        while (startX - offsetX >= system.gridStartX) {
+                            containerId = createLayoutContainer(mStartX - offsetX, mStartY, mEndX - offsetX, mEndY);
+                            system.groups[system.activeGroup].push(containerId);
+                            system.layoutData[system.layoutSize - 1][9] = system.activeGroup;
+                            offsetX += offsetGridX + containerX;
+                        }
+                    }
                 }
             } else {
-                var offsetGridY = mStartY - system.gridStartY;
-                var offsetY = 0;
-                if ((mEndY - mStartY) > mouse.threshold) {
+
+                if (containerY > mouse.threshold) {
+
+                    if (system.spaceGridY > 0) {
+                        var offsetGridY = system.spaceGridY;
+                        var offsetY = 0;
+                    } else {
+                        var offsetGridY = mStartY - system.gridStartY;
+                        var offsetY = 0;
+                    }
+
                     var containerId = createLayoutContainer(mStartX, mStartY, mEndX, mEndY);
                     system.groups.push([containerId]);
                     system.activeGroup = system.groups.length - 1;
                     system.layoutData[system.layoutSize - 1][9] = system.activeGroup;
 
-                    while (offsetY + (mEndY - mStartY) + offsetGridY <= system.gridEndY - mEndY) {
-                        offsetY += offsetGridY + (mEndY - mStartY);
+                    while (offsetY + containerY + offsetGridY <= system.gridEndY - mEndY) {
+                        offsetY += offsetGridY + containerY;
                         containerId = createLayoutContainer(mStartX, mStartY + offsetY, mEndX, mEndY + offsetY);
                         system.groups[system.activeGroup].push(containerId);
                         system.layoutData[system.layoutSize - 1][9] = system.activeGroup;
+                    }
+
+                    if (system.spaceGridY > 0) {
+                        var startY = mStartY;
+                        var offsetY = offsetGridY + containerY;
+
+                        while (startY - offsetY >= system.gridStartY) {
+                            containerId = createLayoutContainer(mStartX, mStartY - offsetY, mEndX, mEndY - offsetY);
+                            system.groups[system.activeGroup].push(containerId);
+                            system.layoutData[system.layoutSize - 1][9] = system.activeGroup;
+                            offsetY += offsetGridY + containerY;
+                        }
                     }
                 }
             }
