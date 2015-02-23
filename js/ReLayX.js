@@ -106,6 +106,10 @@ function relayx(canvasItem, codeItem, designName, width, height, gridX, gridY, g
     mouse.x = 0;
     mouse.y = 0;
     mouse.threshold = 25;
+
+    window.scrollX = window.scrollX || window.pageXOffset;
+    window.scrollY = window.scrollY || window.pageYOffset;
+
     mouse.offsetX = canvas.offsetLeft + window.scrollY;
     mouse.offsetY = canvas.offsetTop + window.scrollX;
     mouse.startX = 0;
@@ -116,6 +120,7 @@ function relayx(canvasItem, codeItem, designName, width, height, gridX, gridY, g
     mouse.previousSelection = null;
     mouse.currentAction = null;
     mouse.snapToGrid = false;
+    mouse.current = "default";
 
     var design = getDesign(designName, width, height, gridX, gridY);
 
@@ -365,6 +370,9 @@ function relayx(canvasItem, codeItem, designName, width, height, gridX, gridY, g
     }
 
     function checkMouseDown(evt) {
+        window.scrollX = window.scrollX || window.pageXOffset;
+        window.scrollY = window.scrollY || window.pageYOffset;
+
         mouse.startX = evt.clientX - mouse.offsetX + window.scrollX;
         mouse.startY = evt.clientY - mouse.offsetY + window.scrollY;
         var mX = evt.clientX - mouse.offsetX + window.scrollX;
@@ -509,6 +517,8 @@ function relayx(canvasItem, codeItem, designName, width, height, gridX, gridY, g
     }
 
     function checkMouseUp(evt) {
+        window.scrollX = window.scrollX || window.pageXOffset;
+        window.scrollY = window.scrollY || window.pageYOffset;
         mouse.endX = evt.clientX - mouse.offsetX + window.scrollX;
         mouse.endY = evt.clientY - mouse.offsetY + window.scrollY;
 
@@ -744,7 +754,6 @@ function relayx(canvasItem, codeItem, designName, width, height, gridX, gridY, g
 
             var mStartX = mouse.startX;
             var mStartY = mouse.startY;
-
             var mEndX = mouse.x;
             var mEndY = mouse.y;
 
@@ -836,6 +845,7 @@ function relayx(canvasItem, codeItem, designName, width, height, gridX, gridY, g
             dc.fillRect(0, Math.floor(mouse.y / system.gridY) * system.gridY, canvas.width, system.gridY);
         }
 
+
         if (mouse.currentAction === "selection" || mouse.currentAction === "mirrorSelection") {
             drawSelection();
         }
@@ -851,6 +861,9 @@ function relayx(canvasItem, codeItem, designName, width, height, gridX, gridY, g
     function handleMouseMove(evt) {
         var mousePreviousX = mouse.x;
         var mousePreviousY = mouse.y;
+        window.scrollX = window.scrollX || window.pageXOffset;
+        window.scrollY = window.scrollY || window.pageYOffset;
+
         mouse.x = evt.clientX - mouse.offsetX + window.scrollX;
         mouse.y = evt.clientY - mouse.offsetY + window.scrollY;
 
@@ -897,7 +910,7 @@ function relayx(canvasItem, codeItem, designName, width, height, gridX, gridY, g
     }
 
     function handleKeyboardDown(evt) {
-        if (evt.target.nodeName !== "BODY") {
+        if (evt.target.nodeName === "INPUT" || evt.target.nodeName === "TEXTAREA") {
             return;
         }
 
@@ -1058,7 +1071,7 @@ function relayx(canvasItem, codeItem, designName, width, height, gridX, gridY, g
 
 
     function handleKeyboardUp(evt) {
-        if (!evt.target.nodeName === "BODY") {
+        if (evt.target.nodeName === "INPUT" || evt.target.nodeName === "TEXTAREA") {
             return;
         }
 
