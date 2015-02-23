@@ -102,25 +102,7 @@ function relayx(canvasItem, codeItem, designName, width, height, gridX, gridY, g
     canvas.height = height;
     canvas.style.cursor = "none";
 
-    //var mouse = {};
-    mouse.x = 0;
-    mouse.y = 0;
-    mouse.threshold = 25;
 
-    window.scrollX = window.scrollX || window.pageXOffset;
-    window.scrollY = window.scrollY || window.pageYOffset;
-
-    mouse.offsetX = canvas.offsetLeft + window.scrollY;
-    mouse.offsetY = canvas.offsetTop + window.scrollX;
-    mouse.startX = 0;
-    mouse.startY = 0;
-    mouse.endX = 0;
-    mouse.endY = 0;
-    mouse.selection = null;
-    mouse.previousSelection = null;
-    mouse.currentAction = null;
-    mouse.snapToGrid = false;
-    mouse.current = "default";
 
     var design = getDesign(designName, width, height, gridX, gridY);
 
@@ -159,6 +141,36 @@ function relayx(canvasItem, codeItem, designName, width, height, gridX, gridY, g
     system.expandMode = "border";
     system.spaceGridX = 0;
     system.spaceGridY = 0;
+    system.showHelp = true;
+
+    // Might only work on IE11 and only if the user agent is not altered by the user
+    system.isIE = window.navigator.userAgent.indexOf("Trident") !== -1 ? true : false;
+
+    if (system.isIE) {
+        system.scrollX = window.pageXOffset;
+        system.scrollY = window.pageYOffset;
+    } else {
+        system.scrollX = window.scrollX;
+        system.scrollY = window.scrollY;
+    }
+
+    //var mouse = {};
+    mouse.x = 0;
+    mouse.y = 0;
+    mouse.threshold = 25;
+
+    mouse.offsetX = canvas.offsetLeft + system.scrollX;
+    mouse.offsetY = canvas.offsetTop + system.scrollY;
+    mouse.startX = 0;
+    mouse.startY = 0;
+    mouse.endX = 0;
+    mouse.endY = 0;
+    mouse.selection = null;
+    mouse.previousSelection = null;
+    mouse.currentAction = null;
+    mouse.snapToGrid = false;
+    mouse.current = "default";
+
 
     // Helper functions
     // Create and return a copy of an array item
@@ -372,13 +384,18 @@ function relayx(canvasItem, codeItem, designName, width, height, gridX, gridY, g
     }
 
     function checkMouseDown(evt) {
-        window.scrollX = window.scrollX || window.pageXOffset;
-        window.scrollY = window.scrollY || window.pageYOffset;
+        if (system.isIE) {
+            system.scrollX = window.pageXOffset;
+            system.scrollY = window.pageYOffset;
+        } else {
+            system.scrollX = window.scrollX;
+            system.scrollY = window.scrollY;
+        }
 
-        mouse.startX = evt.clientX - mouse.offsetX + window.scrollX;
-        mouse.startY = evt.clientY - mouse.offsetY + window.scrollY;
-        var mX = evt.clientX - mouse.offsetX + window.scrollX;
-        var mY = evt.clientY - mouse.offsetY + window.scrollY;
+        mouse.startX = evt.clientX - mouse.offsetX + system.scrollX;
+        mouse.startY = evt.clientY - mouse.offsetY + system.scrollY;
+        var mX = evt.clientX - mouse.offsetX + system.scrollX;
+        var mY = evt.clientY - mouse.offsetY + system.scrollY;
         var hasSelection = false;
 
         if (mouse.currentAction === "mirrorSelection") {
@@ -467,10 +484,6 @@ function relayx(canvasItem, codeItem, designName, width, height, gridX, gridY, g
                             }
                         }
                     }
-
-                    lg(offsetX)
-
-
                 } else {
                     if (system.spaceGridY > 0) {
                         var offsetGridY = system.spaceGridY;
@@ -628,10 +641,16 @@ function relayx(canvasItem, codeItem, designName, width, height, gridX, gridY, g
     }
 
     function checkMouseUp(evt) {
-        window.scrollX = window.scrollX || window.pageXOffset;
-        window.scrollY = window.scrollY || window.pageYOffset;
-        mouse.endX = evt.clientX - mouse.offsetX + window.scrollX;
-        mouse.endY = evt.clientY - mouse.offsetY + window.scrollY;
+        if (system.isIE) {
+            system.scrollX = window.pageXOffset;
+            system.scrollY = window.pageYOffset;
+        } else {
+            system.scrollX = window.scrollX;
+            system.scrollY = window.scrollY;
+        }
+
+        mouse.endX = evt.clientX - mouse.offsetX + system.scrollX;
+        mouse.endY = evt.clientY - mouse.offsetY + system.scrollY;
 
         if (mouse.currentAction === "selection") {
             createLayoutContainer(mouse.startX, mouse.startY, mouse.endX, mouse.endY);
@@ -1015,6 +1034,10 @@ function relayx(canvasItem, codeItem, designName, width, height, gridX, gridY, g
         dc.fillStyle = previousFill;
     }
 
+    function renderHelp() {
+
+    }
+
 
 
 // Mainloop
@@ -1031,12 +1054,15 @@ function relayx(canvasItem, codeItem, designName, width, height, gridX, gridY, g
             dc.fillRect(0, Math.floor(mouse.y / system.gridY) * system.gridY, canvas.width, system.gridY);
         }
 
-
         if (mouse.currentAction === "selection" || mouse.currentAction === "mirrorSelection") {
             drawSelection();
         }
+
         renderLayoutItems();
 
+        if (system.showHelp) {
+            renderHelp();
+        }
 
         drawMouse();
         window.requestAnimationFrame(mainloop);
@@ -1047,11 +1073,20 @@ function relayx(canvasItem, codeItem, designName, width, height, gridX, gridY, g
     function handleMouseMove(evt) {
         var mousePreviousX = mouse.x;
         var mousePreviousY = mouse.y;
-        window.scrollX = window.scrollX || window.pageXOffset;
-        window.scrollY = window.scrollY || window.pageYOffset;
 
-        mouse.x = evt.clientX - mouse.offsetX + window.scrollX;
-        mouse.y = evt.clientY - mouse.offsetY + window.scrollY;
+        lg("inside");
+        if (system.isIE) {
+            system.scrollX = window.pageXOffset;
+            system.scrollY = window.pageYOffset;
+        } else {
+            system.scrollX = window.scrollX;
+            system.scrollY = window.scrollY;
+        }
+        lg(system.scrollX);
+        lg(system.scrollY);
+
+        mouse.x = evt.clientX - mouse.offsetX + system.scrollX;
+        mouse.y = evt.clientY - mouse.offsetY + system.scrollY;
 
         if (mouse.currentAction === "dragContainer" || (mouse.currentAction === "dragGroup" && system.activeGroup === null)) {
             mouse.selection[2] += mouse.x - mousePreviousX;
