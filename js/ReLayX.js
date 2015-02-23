@@ -515,34 +515,46 @@ function relayx(canvasItem, codeItem, designName, width, height, gridX, gridY, g
             createLayoutContainer(mouse.startX, mouse.startY, mouse.endX, mouse.endY);
             mouse.currentAction = null;
         } else if (mouse.currentAction === "mirrorSelection") {
+            if (mouse.snapToGrid) {
+                var mStartX = Math.floor(mouse.startX / system.gridX) * system.gridX;
+                var mStartY = Math.floor(mouse.startY / system.gridY) * system.gridY;
+                var mEndX = Math.ceil(mouse.x / system.gridX) * system.gridX;
+                var mEndY = Math.ceil(mouse.y / system.gridY) * system.gridY;
+            } else {
+                var mStartX = mouse.startX;
+                var mStartY = mouse.startY;
+                var mEndX = mouse.endX;
+                var mEndY = mouse.endY;
+            }
+
             if (system.mirrorHorizontal) {
-                var offsetGridX = mouse.startX - system.gridStartX;
+                var offsetGridX = mStartX - system.gridStartX;
                 var offsetX = 0;
-                if ((mouse.endX - mouse.startX) > mouse.threshold) {
-                    var containerId = createLayoutContainer(mouse.startX, mouse.startY, mouse.endX, mouse.endY);
+                if ((mEndX - mStartX) > mouse.threshold) {
+                    var containerId = createLayoutContainer(mStartX, mStartY, mEndX, mEndY);
                     system.groups.push([containerId]);
                     system.activeGroup = system.groups.length - 1;
                     system.layoutData[system.layoutSize - 1][9] = system.activeGroup;
 
-                    while (offsetX + (mouse.endX - mouse.startX) + offsetGridX <= system.gridEndX - mouse.endX) {
-                        offsetX += offsetGridX + (mouse.endX - mouse.startX);
-                        containerId = createLayoutContainer(mouse.startX + offsetX, mouse.startY, mouse.endX + offsetX, mouse.endY);
+                    while (offsetX + (mEndX - mStartX) + offsetGridX <= system.gridEndX - mEndX) {
+                        offsetX += offsetGridX + (mEndX - mStartX);
+                        containerId = createLayoutContainer(mStartX + offsetX, mStartY, mEndX + offsetX, mEndY);
                         system.groups[system.activeGroup].push(containerId);
                         system.layoutData[system.layoutSize - 1][9] = system.activeGroup;
                     }
                 }
             } else {
-                var offsetGridY = mouse.startY - system.gridStartY;
+                var offsetGridY = mStartY - system.gridStartY;
                 var offsetY = 0;
-                if ((mouse.endY - mouse.startY) > mouse.threshold) {
-                    var containerId = createLayoutContainer(mouse.startX, mouse.startY, mouse.endX, mouse.endY);
+                if ((mEndY - mStartY) > mouse.threshold) {
+                    var containerId = createLayoutContainer(mStartX, mStartY, mEndX, mEndY);
                     system.groups.push([containerId]);
                     system.activeGroup = system.groups.length - 1;
                     system.layoutData[system.layoutSize - 1][9] = system.activeGroup;
 
-                    while (offsetY + (mouse.endY - mouse.startY) + offsetGridY <= system.gridEndY - mouse.endY) {
-                        offsetY += offsetGridY + (mouse.endY - mouse.startY);
-                        containerId = createLayoutContainer(mouse.startX, mouse.startY + offsetY, mouse.endX, mouse.endY + offsetY);
+                    while (offsetY + (mEndY - mStartY) + offsetGridY <= system.gridEndY - mEndY) {
+                        offsetY += offsetGridY + (mEndY - mStartY);
+                        containerId = createLayoutContainer(mStartX, mStartY + offsetY, mEndX, mEndY + offsetY);
                         system.groups[system.activeGroup].push(containerId);
                         system.layoutData[system.layoutSize - 1][9] = system.activeGroup;
                     }
@@ -564,20 +576,10 @@ function relayx(canvasItem, codeItem, designName, width, height, gridX, gridY, g
         var itemEndY = 0;
 
         if (mouse.snapToGrid) {
-            if (mStartX > mEndX) {
-                mStartX = Math.ceil(mStartX / system.gridX) * system.gridX;
-            } else {
-                mStartX = Math.floor(mStartX / system.gridX) * system.gridX;
-            }
-
-            if (mStartY > mEndY) {
-                mStartY = Math.ceil(mStartY / system.gridY) * system.gridY;
-            } else {
-                mStartY = Math.floor(mStartY / system.gridY) * system.gridY;
-            }
-
+            mStartX = Math.floor(mStartX / system.gridX) * system.gridX;
+            mStartY = Math.floor(mStartY / system.gridY) * system.gridY;
             mEndX = Math.ceil(mEndX / system.gridX) * system.gridX;
-            mEndY = Math.floor(mEndY / system.gridY) * system.gridY;
+            mEndY = Math.ceil(mEndY / system.gridY) * system.gridY;
         }
 
         if (mStartX < mEndX) {
@@ -759,23 +761,10 @@ function relayx(canvasItem, codeItem, designName, width, height, gridX, gridY, g
 
             dc.beginPath();
             if (mouse.snapToGrid) {
-                if (mouse.startX > mouse.x) {
-                    var mStartX = Math.ceil(mouse.startX / system.gridX) * system.gridX;
-                    var mEndX = Math.ceil(mouse.x / system.gridX) * system.gridX;
-                } else {
-                    var mStartX = Math.floor(mouse.startX / system.gridX) * system.gridX;
-                    var mEndX = Math.ceil(mouse.x / system.gridX) * system.gridX;
-                }
-
-                if (mouse.startY > mouse.y) {
-                    var mStartY = Math.ceil(mouse.startY / system.gridY) * system.gridY;
-                    var mEndY = Math.ceil(mouse.y / system.gridY) * system.gridY;
-                } else {
-                    var mStartY = Math.floor(mouse.startY / system.gridY) * system.gridY;
-                    var mEndY = Math.floor(mouse.y / system.gridY) * system.gridY;
-                }
-
-
+                var mStartY = Math.floor(mouse.startY / system.gridY) * system.gridY;
+                var mStartX = Math.floor(mouse.startX / system.gridX) * system.gridX;
+                var mEndX = Math.ceil(mouse.x / system.gridX) * system.gridX;
+                var mEndY = Math.ceil(mouse.y / system.gridY) * system.gridY;
                 dc.rect(mStartX, mStartY, mEndX - mStartX, mEndY - mStartY);
             }
 
