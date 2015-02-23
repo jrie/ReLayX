@@ -84,18 +84,27 @@ function relayx(canvasItem, codeItem, designName, width, height, gridX, gridY, g
 
     window.requestAnimationFrame = window.requestAnimationFrame || window.mozRequestAnimationFrame || window.webkitRequestAnimationFrame || window.oRequestAnimationFrame;
 
-    // Debug console shortcut
-    var hasConsole = window.console ? true : false;
-    function lg(msg) {
-        if (hasConsole) {
-            window.console.log(msg);
-        }
-    }
+
 
     // General variables
     var canvas = document.getElementById(canvasItem);
     var codePanel = document.getElementById(codeItem);
     var dc = canvas.getContext("2d");
+
+    // Debug console shortcut
+    function lg(msg) {
+        if (codePanel === null) {
+            window.console.log(msg);
+        } else {
+            if (codePanel.innerHTML.split("\n").length > 5) {
+                codePanel.innerHTML = "";
+            }
+            codePanel.scrollTop = codePanel.scrollHeight;
+            codePanel.innerHTML += msg + "\n";
+
+
+        }
+    }
 
     // Set styles
     canvas.width = width;
@@ -1035,7 +1044,107 @@ function relayx(canvasItem, codeItem, designName, width, height, gridX, gridY, g
     }
 
     function renderHelp() {
+        dc.fillStyle = "rgba(0,0,0, 0.3)";
+        dc.beginPath();
+        dc.rect(0, 0, canvas.width, canvas.height);
+        dc.closePath();
+        dc.fill();
 
+        var shortcuts = ['[I] Toggles this help on/off', '[G] key toggles the grid on an off', '[D] toogles row / column highlighting',
+            '[Control] cancels ongoing action or when grouping/ungrouping items',
+            '[Shift] snaps to grid when drawing selection, moving an item (click and drag) and mirroring',
+            '[Left click and drag movement] Moves a single item or a single item of a group',
+            '[Y] Move mode on/off switch, moves a element or group if grouped, can be used with snapping',
+            '[Delete] Deletes a single element or grouped elements',
+            '[C] create a copy of a single item selection',
+            '[V] pastes the copy at cursor location, snapping is possible',
+            '[Spacebar] Mirror mode',
+            'By default uses distance from grid start to cursor for mirroring.',
+            'This can be changed by pressing [W] or [Q] for each axis independently',
+            '[X] Toggles mirror mode horizontally or vertically',
+            '[Q / W] decrease / increase mirror grid spacing on selected axis - used with [SPACE] and [X]',
+            '[E] zeros/erases the grid spacing values for both mirroring axis',
+            '[+ or -] Increase or decrase the border on a single item or a group of items'
+        ];
+
+        dc.fillStyle = "#000";
+
+        dc.font = "Normal 11px sans-serif";
+        dc.fillText('______________________________________ ReLayX Shortcuts ______________________________________', 20, 20);
+
+        dc.font = "Normal 11px sans-serif";
+        var offsetY = 45;
+        for (var item = 0; item < shortcuts.length; item++) {
+            dc.fillText(shortcuts[item], 20, (item * 22) + offsetY);
+        }
+
+        dc.font = "Normal 11px sans-serif";
+        dc.fillText('___________________________________________ First steps  _________________________________________', 20, 450);
+
+        var first = [
+            "Click and drag to create a selection, release the mouse to create a container item.",
+            "The container can now be moved by pressing left, to activate, and dragging. Notice the color change when selected",
+            "If you want to snap the item to the grid, you can press [SHIFT] to do so, this also snaps the container into the grid.",
+            "To delete the container press [DELETE]. To create a copy press [C] and [V] to paste it at the mouse cursor location,",
+            "snapping can be used here too when holding [SHIFT] while pressing [V] once."
+        ];
+
+        dc.font = "Normal 11px sans-serif";
+        offsetY = 480;
+        for (var item = 0; item < first.length; item++) {
+            dc.fillText(first[item], 20, (item * 21) + offsetY);
+        }
+
+
+
+        dc.font = "Normal 11px sans-serif";
+        dc.fillText('___________________________________________ Grouping ____________________________________________', 20, 610);
+
+        var group = [
+            "If you have two or more containers, you can group them together. This can be done by selecting",
+            "another ungrouped (see the color when clicking on it) and holding [CONTROL] and left click onto it",
+            "they now are grouped and change there colors when selected.",
+            "Grouped items can be moved each by left click and drag or as whole by pressing [Y], [Y] is a toggle, no need",
+            "to hold down the key - and move the mouse around, snapping using [SHIFT] is possible too.",
+            "To ungroup an item, select the grouped container and then click, while holding [CONTROL], on it again, its then ungrouped.",
+            "This is also shown by its colors."
+        ];
+
+        offsetY = 640;
+        for (var item = 0; item < group.length; item++) {
+            dc.fillText(group[item], 20, (item * 21) + offsetY);
+        }
+
+        dc.font = "Normal 11px sans-serif";
+        dc.fillText('___________________________________________ Mirroring ____________________________________________', 20, 800);
+
+        var mirror = [
+            "The simples way to test mirroring is by drawing a selection, hold the left mouse button not to finish",
+            "the selection and holding [SPACE]. Press [W] once to increase  the mirror distance to one grid unit.",
+            "Mirrors along the axis will appear, press [W] to increase it even once more to see the difference.",
+            "If you are happy, release the left mouse button while keeping [SPACE] holded until the action finishes.",
+            "Youve got a grouped row of those containers, aligned to the grid spacing you selected.",
+            "",
+            "Another quick way to create mirrors: Select one of those new containers, anyone will be good.",
+            "Now hold [SPACE] and press [X] once, if nothing appears, press [W] again, you should now see",
+            "a column of possible mirrors. Left click on one to while holding [SPACE] to create one at that location.",
+            "",
+            "Pressing [Q] will decreate the grid spacing by one unit to zero, while [W] will increase it. If you reach zero",
+            "the default spacing is used. Meaning, if you draw a selection with 2 gridspaces away from the left, you will",
+            "get mirrors when holding [SPACE] in size of the container plus 2 gridspaces away. [Q / W] avoid that limitation.",
+            "",
+            "If you have set spacing on any axis, this will also draw mirrors on the whole X or Y row/column. If you want",
+            "to create copies, use the shadowing trick by selection the element and setting the grid axis spacing with [Q] or [W]."
+        ];
+
+        dc.font = "Normal 11px sans-serif";
+        offsetY = 830;
+        for (var item = 0; item < mirror.length; item++) {
+            dc.fillText(mirror[item], 20, (item * 21) + offsetY);
+        }
+
+        dc.font = "Normal 11px sans-serif";
+        dc.fillText('_______________ End of ReLayX manual ___ Visit http://github.com/jrie/RelayX ________', 20, 1180);
     }
 
 
@@ -1048,6 +1157,8 @@ function relayx(canvasItem, codeItem, designName, width, height, gridX, gridY, g
             drawGrid(system.gridStartX, system.gridStartY, system.gridEndX, system.gridEndY);
         }
 
+        renderLayoutItems();
+
         if (system.drawHighlight) {
             dc.fillStyle = design.hightlighterColor;
             dc.fillRect(Math.floor(mouse.x / system.gridX) * system.gridX, 0, system.gridX, canvas.height);
@@ -1057,8 +1168,6 @@ function relayx(canvasItem, codeItem, designName, width, height, gridX, gridY, g
         if (mouse.currentAction === "selection" || mouse.currentAction === "mirrorSelection") {
             drawSelection();
         }
-
-        renderLayoutItems();
 
         if (system.showHelp) {
             renderHelp();
@@ -1074,7 +1183,6 @@ function relayx(canvasItem, codeItem, designName, width, height, gridX, gridY, g
         var mousePreviousX = mouse.x;
         var mousePreviousY = mouse.y;
 
-        lg("inside");
         if (system.isIE) {
             system.scrollX = window.pageXOffset;
             system.scrollY = window.pageYOffset;
@@ -1082,8 +1190,6 @@ function relayx(canvasItem, codeItem, designName, width, height, gridX, gridY, g
             system.scrollX = window.scrollX;
             system.scrollY = window.scrollY;
         }
-        lg(system.scrollX);
-        lg(system.scrollY);
 
         mouse.x = evt.clientX - mouse.offsetX + system.scrollX;
         mouse.y = evt.clientY - mouse.offsetY + system.scrollY;
@@ -1296,6 +1402,10 @@ function relayx(canvasItem, codeItem, designName, width, height, gridX, gridY, g
             return;
         }
 
+        if (evt.keyCode === 73) {
+            system.showHelp = !system.showHelp;
+        }
+
         if (evt.keyCode === 17) {
             // Control key - cancels current action, for example selection or container creation
             mouse.currentAction = null;
@@ -1309,7 +1419,9 @@ function relayx(canvasItem, codeItem, designName, width, height, gridX, gridY, g
             lg("Switching grid " + (system.drawGrid ? "on" : "off"));
         } else if (evt.keyCode === 67) {
             // C key starts a copy
-            system.copyItem = mouse.selection;
+            if (mouse.selection !== null) {
+                system.copyItem = mouse.selection;
+            }
             lg("Taking a copy of layout item: " + system.copyItem[0]);
         } else if (evt.keyCode === 86) {
             // V key create a copy at cursor location
@@ -1347,10 +1459,12 @@ function relayx(canvasItem, codeItem, designName, width, height, gridX, gridY, g
             system.expandMode = "padding";
             lg("Setting padding expand mode.");
         } else if (evt.keyCode === 69) {
+            // E key erases the old spacing values for mirroring
             system.spaceGridX = 0;
             system.spaceGridY = 0;
             lg("Mirror spacing resetted on both axis to 0.");
         } else if (evt.keyCode === 87) {
+            // W key increases the current selection axis grid spacing by one grid unit
             if (system.mirrorHorizontal) {
                 system.spaceGridX += system.gridX;
             } else {
@@ -1358,6 +1472,7 @@ function relayx(canvasItem, codeItem, designName, width, height, gridX, gridY, g
             }
             lg("Increased grid spacing to: " + system.spaceGridX + " X and " + system.spaceGridY + " Y");
         } else if (evt.keyCode === 81) {
+            // Q key decreases the current selection axis grid spacing by one grid unit
             if (system.mirrorHorizontal) {
                 system.spaceGridX -= system.gridX;
                 if (system.spaceGridX < 0) {
@@ -1370,8 +1485,6 @@ function relayx(canvasItem, codeItem, designName, width, height, gridX, gridY, g
                 }
             }
             lg("Decreased grid spacing to: " + system.spaceGridX + " X and " + system.spaceGridY + " Y");
-
-            lg(evt.keyCode);
         }
     }
 
