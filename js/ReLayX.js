@@ -145,6 +145,8 @@ function relayx(canvasItem, codeItem, designName, width, height, gridX, gridY, g
     system.showNotifications = true;
     system.notifications = [];
     system.showHelpNote = true;
+    system.shiftPressed = false;
+    system.storage = window.sessionStorage || null;
 
     // Might only work on IE11 and only if the user agent is not altered by the user
     system.isIE = window.navigator.userAgent.indexOf("Trident") !== -1 ? true : false;
@@ -1058,7 +1060,8 @@ function relayx(canvasItem, codeItem, designName, width, height, gridX, gridY, g
             '[X] Toggles mirror mode horizontally or vertically',
             '[Q / W] decrease / increase mirror grid spacing on selected axis - used with [SPACE] and [X]',
             '[E] zeros/erases the grid spacing values for both mirroring axis',
-            '[+ or -] Increase or decrase the border on a single item or a group of items'
+            '[+ or -] Increase or decrase the border on a single item or a group of items',
+            '[1 to 9] - Saves design in slot 1 to 9, [SHIFT + 1 ... 9] loads a design from slot 1 to 9, [BACKSPACE] Clears all saved data'
         ];
 
         dc.fillStyle = "#000";
@@ -1155,7 +1158,7 @@ function relayx(canvasItem, codeItem, designName, width, height, gridX, gridY, g
         }
 
         while (notes--) {
-            if (system.notifications[notes][0] < 45) {
+            if (system.notifications[notes][0] < 65) {
                 system.notifications[notes][0]++;
                 dc.fillText(system.notifications[notes][1], 20, offsetY);
                 offsetY += 16;
@@ -1328,6 +1331,7 @@ function relayx(canvasItem, codeItem, designName, width, height, gridX, gridY, g
             // Shift key snapping
             mouse.snapToGrid = true;
             //mouse.currentAction = null;
+            system.shiftPressed = true;
             return;
         } else if (evt.keyCode === 89) {
             // Y key, allows moving off items when pressend once, disables if pressed a second time
@@ -1418,12 +1422,112 @@ function relayx(canvasItem, codeItem, designName, width, height, gridX, gridY, g
         }
     }
 
+    function saveDesign(slot) {
+        if (system.storage === null) {
+            lg("Cannot use loading or saving function in this browser.");
+            return;
+        }
+        var layoutKey = "layout_" + slot;
+        var layoutSubKey = layoutKey + "_";
+        system.storage.setItem(layoutKey, true);
+
+        var item = 0;
+        for (item = 0; item < system.layoutSize; item++) {
+            system.storage.setItem(layoutSubKey + item, system.layoutData[item]);
+        }
+        system.storage.setItem(layoutSubKey + item, false);
+        lg("Design saved in slot " + slot + ".");
+        return;
+    }
+
+    function loadDesign(slot) {
+        if (system.storage === null) {
+            lg("Cannot use loading or saving function in this browser.");
+            return;
+        }
+
+        var layoutKey = "layout_" + slot;
+        var layoutSubKey = layoutKey + "_";
+        var layoutIndex = 0;
+
+        system.layoutData = [];
+        system.layoutSize = 0;
+
+        if (system.storage.getItem(layoutKey) !== null) {
+            while (system.storage.getItem(layoutSubKey + layoutIndex) !== null && system.storage.getItem(layoutSubKey + layoutIndex) !== "false") {
+                var storageItemData = system.storage.getItem(layoutSubKey + layoutIndex).split(",");
+                for (var key = 0; key < storageItemData.length; key++) {
+                    var floatVal = parseFloat(storageItemData[key]);
+                    if (!Number.isNaN(floatVal)) {
+                        storageItemData[key] = floatVal;
+                    }
+                }
+
+                var groupKey = storageItemData[9];
+                if (groupKey !== -1) {
+                    if (groupKey !== system.activeGroup) {
+                        system.groups.push([storageItemData[0]]);
+                        system.activeGroup = storageItemData[9];
+                    } else {
+                        system.groups[system.activeGroup].push(storageItemData[0]);
+                    }
+                }
+                system.layoutData.push(storageItemData);
+                system.layoutSize++;
+                layoutIndex++;
+            }
+
+            system.activeGroup = null;
+
+            lg("Design loaded from slot " + slot + ".");
+            return;
+        }
+
+        lg("No design to load in slot " + slot + ".");
+        return;
+    }
+
+    function clearDesigns() {
+        Storage.clear();
+    }
 
 
     function handleKeyboardUp(evt) {
         if (evt.target.nodeName === "INPUT" || evt.target.nodeName === "TEXTAREA") {
             return;
         }
+
+        if (evt.keyCode === 16) {
+            system.shiftPressed = false;
+            return;
+        }
+
+        if (system.shiftPressed) {
+            if (evt.keyCode >= 49 && evt.keyCode <= 57) {
+                // 1 to 9 pressed on keyboard pressed
+                var slot = evt.keyCode - 48;
+                loadDesign(slot);
+                lg("Loading design...");
+            }
+        } else {
+            if (evt.keyCode >= 49 && evt.keyCode <= 57) {
+                // 1 to 9 pressed on keyboard pressed
+                var slot = evt.keyCode - 48;
+                saveDesign(slot);
+                lg("Saving design...");
+            }
+        }
+
+        if (evt.keyCode === 8) {
+            evt.preventDefault();
+            if (system.storage !== null) {
+                system.storage.clear();
+                lg("Storage cleared...");
+                return;
+            }
+        }
+
+
 
         if (evt.keyCode === 73) {
             system.showHelp = !system.showHelp;
