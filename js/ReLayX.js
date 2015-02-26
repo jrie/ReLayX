@@ -141,9 +141,10 @@ function relayx(canvasItem, codeItem, designName, width, height, gridX, gridY, g
     system.expandMode = "border";
     system.spaceGridX = 0;
     system.spaceGridY = 0;
-    system.showHelp = true;
+    system.showHelp = false;
     system.showNotifications = true;
     system.notifications = [];
+    system.showHelpNote = true;
 
     // Might only work on IE11 and only if the user agent is not altered by the user
     system.isIE = window.navigator.userAgent.indexOf("Trident") !== -1 ? true : false;
@@ -1122,7 +1123,7 @@ function relayx(canvasItem, codeItem, designName, width, height, gridX, gridY, g
             "Now hold [SPACE] and press [X] once, if nothing appears, press [W] again, you should now see",
             "a column of possible mirrors. Left click on one to while holding [SPACE] to create one at that location.",
             "",
-            "Pressing [Q] will decreate the grid spacing by one unit to zero, while [W] will increase it. If you reach zero",
+            "Pressing [Q] will decrease the grid spacing by one unit to zero, while [W] will increase it. If you reach zero",
             "the default spacing is used. Meaning, if you draw a selection with 2 gridspaces away from the left, you will",
             "get mirrors when holding [SPACE] in size of the container plus 2 gridspaces away. [Q / W] avoid that limitation.",
             "",
@@ -1142,13 +1143,22 @@ function relayx(canvasItem, codeItem, designName, width, height, gridX, gridY, g
 
     function renderNotifications() {
         var notes = system.notifications.length;
-        var offsetY = 20;
+        if (system.showHelpNote) {
+            var offsetY = 36;
+        } else {
+            var offsetY = 20;
+        }
+        dc.font = "10px sans-serif";
         dc.fillStyle = design.notificationColor;
+        if (!system.showHelp && system.showHelpNote) {
+            dc.fillText("Press [I] to open help, [Z] to hide this message", 20, 20);
+        }
+
         while (notes--) {
             if (system.notifications[notes][0] < 45) {
                 system.notifications[notes][0]++;
                 dc.fillText(system.notifications[notes][1], 20, offsetY);
-                offsetY += 20;
+                offsetY += 16;
             } else {
                 system.notifications.splice(notes, 1);
             }
@@ -1328,12 +1338,14 @@ function relayx(canvasItem, codeItem, designName, width, height, gridX, gridY, g
                     mouse.currentAction = "selected";
                 }
             }
+            return;
         } else if (evt.keyCode === 32) {
             // Space bar pressed, turns on repeatition
             evt.preventDefault();
             if (mouse.currentAction === "selection" || mouse.selection !== null) {
                 mouse.currentAction = "mirrorSelection";
             }
+            return;
         } else if (evt.keyCode === 171 || evt.keyCode === 107) {
             // Plus sign on keyboard or plus on numpad
             // id, designElementName, x, y, xEnd, yEnd, border, padding, margin, groupIndex
@@ -1415,6 +1427,12 @@ function relayx(canvasItem, codeItem, designName, width, height, gridX, gridY, g
 
         if (evt.keyCode === 73) {
             system.showHelp = !system.showHelp;
+            return;
+        }
+
+        if (evt.keyCode === 90) {
+            system.showHelpNote = !system.showHelpNote;
+            return;
         }
 
         if (evt.keyCode === 17) {
