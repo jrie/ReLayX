@@ -56,6 +56,7 @@ function getDesign(designName, width, height) {
             design.itemSelectionColor = ["#cecece", "#fff"];
             design.containerElement = ["solid", ['#9a9a9a']];
             design.containerBorderColor = 'rgba(0,0,0, 0.5)';
+            design.notificationColor = "#000";
             break;
         case "firebird":
         default:
@@ -68,6 +69,7 @@ function getDesign(designName, width, height) {
             design.itemSelectionColor = ["#aa4a00", "#8a1a00"];
             design.containerElement = ["solid", ['rgba(56, 0, 0, 0.55)']];
             design.containerBorderColor = 'rgba(0,0,0, 0.5)';
+            design.notificationColor = "#aeaeae";
 
             design.resizeRightBottom = [["line", "line"], ["solid", "solid"], [["#222"], ["#fff"]], [[10, 0, 10, 10, 0, 10, 10, 0], [7, 3, 7, 7, 3, 7, 7, 3]], [-12, -12]];
 
@@ -1141,7 +1143,7 @@ function relayx(canvasItem, codeItem, designName, width, height, gridX, gridY, g
     function renderNotifications() {
         var notes = system.notifications.length;
         var offsetY = 20;
-        dc.fillStyle = "#000";
+        dc.fillStyle = design.notificationColor;
         while (notes--) {
             if (system.notifications[notes][0] < 45) {
                 system.notifications[notes][0]++;
@@ -1154,7 +1156,7 @@ function relayx(canvasItem, codeItem, designName, width, height, gridX, gridY, g
     }
 
 
-// Mainloop
+    // Mainloop
     function mainloop() {
         drawItem("background", 0, 1, 2, 3, false);
 
