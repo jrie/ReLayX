@@ -84,8 +84,6 @@ function relayx(canvasItem, codeItem, designName, width, height, gridX, gridY, g
 
     window.requestAnimationFrame = window.requestAnimationFrame || window.mozRequestAnimationFrame || window.webkitRequestAnimationFrame || window.oRequestAnimationFrame;
 
-
-
     // General variables
     var canvas = document.getElementById(canvasItem);
     var codePanel = document.getElementById(codeItem);
@@ -93,25 +91,16 @@ function relayx(canvasItem, codeItem, designName, width, height, gridX, gridY, g
 
     // Debug console shortcut
     function lg(msg) {
-        if (codePanel === null) {
-            window.console.log(msg);
-        } else {
-            if (codePanel.innerHTML.split("\n").length > 5) {
-                codePanel.innerHTML = "";
-            }
-            codePanel.scrollTop = codePanel.scrollHeight;
-            codePanel.innerHTML += msg + "\n";
-
-
+        if (system.showNotifications) {
+            system.notifications.push([0, msg]);
         }
+        window.console.log(msg);
     }
 
     // Set styles
     canvas.width = width;
     canvas.height = height;
     canvas.style.cursor = "none";
-
-
 
     var design = getDesign(designName, width, height, gridX, gridY);
 
@@ -151,6 +140,8 @@ function relayx(canvasItem, codeItem, designName, width, height, gridX, gridY, g
     system.spaceGridX = 0;
     system.spaceGridY = 0;
     system.showHelp = true;
+    system.showNotifications = true;
+    system.notifications = [];
 
     // Might only work on IE11 and only if the user agent is not altered by the user
     system.isIE = window.navigator.userAgent.indexOf("Trident") !== -1 ? true : false;
@@ -1147,6 +1138,20 @@ function relayx(canvasItem, codeItem, designName, width, height, gridX, gridY, g
         dc.fillText('_______________ End of ReLayX manual ___ Visit http://github.com/jrie/RelayX ________', 20, 1180);
     }
 
+    function renderNotifications() {
+        var notes = system.notifications.length;
+        var offsetY = 20;
+        dc.fillStyle = "#000";
+        while (notes--) {
+            if (system.notifications[notes][0] < 45) {
+                system.notifications[notes][0]++;
+                dc.fillText(system.notifications[notes][1], 20, offsetY);
+                offsetY += 20;
+            } else {
+                system.notifications.splice(notes, 1);
+            }
+        }
+    }
 
 
 // Mainloop
@@ -1167,6 +1172,10 @@ function relayx(canvasItem, codeItem, designName, width, height, gridX, gridY, g
 
         if (mouse.currentAction === "selection" || mouse.currentAction === "mirrorSelection") {
             drawSelection();
+        }
+
+        if (system.showNotifications) {
+            renderNotifications();
         }
 
         if (system.showHelp) {
