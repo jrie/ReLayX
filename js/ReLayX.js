@@ -3,47 +3,6 @@ function getDesign(designName, width, height) {
     // The design item
     var design = {};
 
-    // Variables for helper functions
-    var cords = 0;
-    var cordSize = 0;
-    var minY = -1;
-    var minX = -1;
-    var maxX = -1;
-    var maxY = -1;
-
-    function pushBoundaries(item, styleOffset, coordOffset) {
-        cordSize = item[coordOffset].length;
-        for (var index = 0; index < cordSize; index++) {
-            if (item[styleOffset][index] === "line") {
-                if (minX < item[coordOffset][index][0]) {
-                    minX = item[coordOffset][index][0];
-                }
-
-                if (minY < item[coordOffset][index][1]) {
-                    minY = item[coordOffset][index][1];
-                }
-
-                cords = item[coordOffset][index].length;
-                for (var cord = 0; cord < cords; cord += 2) {
-                    if (item[coordOffset][index][cord] > minX) {
-                        maxX = item[coordOffset][index][cord];
-                    }
-
-                    if (item[coordOffset][index][cord + 1] > minY) {
-                        maxY = item[coordOffset][index][cord + 1];
-                    }
-                }
-            } else if (item[styleOffset][index] === "rect") {
-                minX = 0;
-                minY = 0;
-                maxX = item[coordOffset][index][2];
-                maxY = item[coordOffset][index][3];
-            }
-        }
-
-        item.push([minX, minY, maxX, maxY]);
-    }
-
     switch (designName) {
         case "snowwhite":
             design.background = [["rect"], ["solid"], [["#eee"]], [[0, 0, width, height]]];
@@ -438,7 +397,7 @@ function relayx(canvasItem, codeItem, designName, width, height, gridX, gridY, g
                                     }
                                 }
                                 // otherwise create the container at this position
-                                createLayoutContainer(mStartX + offsetX, mStartY, mEndX + offsetX, mEndY);
+                                createLayoutContainer(mStartX + offsetX, mStartY, mEndX + offsetX, mEndY, true);
                                 break;
                             }
 
@@ -461,7 +420,7 @@ function relayx(canvasItem, codeItem, designName, width, height, gridX, gridY, g
                                     }
                                 }
                                 // otherwise create the container at this position
-                                createLayoutContainer(mStartX - offsetX, mStartY, mEndX - offsetX, mEndY);
+                                createLayoutContainer(mStartX - offsetX, mStartY, mEndX - offsetX, mEndY, true);
                                 break;
                             }
 
@@ -484,7 +443,7 @@ function relayx(canvasItem, codeItem, designName, width, height, gridX, gridY, g
                                     }
                                 }
                                 // otherwise create the container at this position
-                                createLayoutContainer(mStartX + offsetX, mStartY, mEndX + offsetX, mEndY);
+                                createLayoutContainer(mStartX + offsetX, mStartY, mEndX + offsetX, mEndY, true);
                                 break;
                             }
                         }
@@ -512,7 +471,7 @@ function relayx(canvasItem, codeItem, designName, width, height, gridX, gridY, g
                                 }
 
                                 // otherwise create the container at this position
-                                createLayoutContainer(mStartX, mStartY + offsetY, mEndX, mEndY + offsetY);
+                                createLayoutContainer(mStartX, mStartY + offsetY, mEndX, mEndY + offsetY, true);
                                 break;
                             }
                             offsetY += offsetGridY + containerY;
@@ -534,7 +493,7 @@ function relayx(canvasItem, codeItem, designName, width, height, gridX, gridY, g
                                     }
                                 }
                                 // otherwise create the container at this position
-                                createLayoutContainer(mStartX, mStartY - offsetY, mEndX, mEndY - offsetY);
+                                createLayoutContainer(mStartX, mStartY - offsetY, mEndX, mEndY - offsetY, true);
                                 break;
                             }
 
@@ -557,7 +516,7 @@ function relayx(canvasItem, codeItem, designName, width, height, gridX, gridY, g
                                     }
                                 }
                                 // otherwise create the container at this position
-                                createLayoutContainer(mStartX, mStartY + offsetY, mEndX, mEndY + offsetY);
+                                createLayoutContainer(mStartX, mStartY + offsetY, mEndX, mEndY + offsetY, true);
                                 break;
                             }
                         }
@@ -658,7 +617,7 @@ function relayx(canvasItem, codeItem, designName, width, height, gridX, gridY, g
         mouse.endY = evt.clientY - mouse.offsetY + system.scrollY;
 
         if (mouse.currentAction === "selection") {
-            createLayoutContainer(mouse.startX, mouse.startY, mouse.endX, mouse.endY);
+            createLayoutContainer(mouse.startX, mouse.startY, mouse.endX, mouse.endY, true);
             mouse.currentAction = null;
         } else if (mouse.currentAction === "mirrorSelection") {
             if (mouse.snapToGrid) {
@@ -680,7 +639,7 @@ function relayx(canvasItem, codeItem, designName, width, height, gridX, gridY, g
             if (system.mirrorHorizontal) {
 
                 if (containerX > mouse.threshold) {
-                    var containerId = createLayoutContainer(mStartX, mStartY, mEndX, mEndY);
+                    var containerId = createLayoutContainer(mStartX, mStartY, mEndX, mEndY, true);
                     system.groups.push([containerId]);
                     system.activeGroup = system.groups.length - 1;
                     system.layoutData[system.layoutSize - 1][9] = system.activeGroup;
@@ -695,7 +654,7 @@ function relayx(canvasItem, codeItem, designName, width, height, gridX, gridY, g
 
                     while (offsetX + containerX + offsetGridX <= system.gridEndX - mEndX) {
                         offsetX += offsetGridX + containerX;
-                        containerId = createLayoutContainer(mStartX + offsetX, mStartY, mEndX + offsetX, mEndY);
+                        containerId = createLayoutContainer(mStartX + offsetX, mStartY, mEndX + offsetX, mEndY, true);
                         system.groups[system.activeGroup].push(containerId);
                         system.layoutData[system.layoutSize - 1][9] = system.activeGroup;
                     }
@@ -705,7 +664,7 @@ function relayx(canvasItem, codeItem, designName, width, height, gridX, gridY, g
                         var offsetX = offsetGridX + containerX;
 
                         while (startX - offsetX >= system.gridStartX) {
-                            containerId = createLayoutContainer(mStartX - offsetX, mStartY, mEndX - offsetX, mEndY);
+                            containerId = createLayoutContainer(mStartX - offsetX, mStartY, mEndX - offsetX, mEndY, true);
                             system.groups[system.activeGroup].push(containerId);
                             system.layoutData[system.layoutSize - 1][9] = system.activeGroup;
                             offsetX += offsetGridX + containerX;
@@ -724,14 +683,14 @@ function relayx(canvasItem, codeItem, designName, width, height, gridX, gridY, g
                         var offsetY = 0;
                     }
 
-                    var containerId = createLayoutContainer(mStartX, mStartY, mEndX, mEndY);
+                    var containerId = createLayoutContainer(mStartX, mStartY, mEndX, mEndY, true);
                     system.groups.push([containerId]);
                     system.activeGroup = system.groups.length - 1;
                     system.layoutData[system.layoutSize - 1][9] = system.activeGroup;
 
                     while (offsetY + containerY + offsetGridY <= system.gridEndY - mEndY) {
                         offsetY += offsetGridY + containerY;
-                        containerId = createLayoutContainer(mStartX, mStartY + offsetY, mEndX, mEndY + offsetY);
+                        containerId = createLayoutContainer(mStartX, mStartY + offsetY, mEndX, mEndY + offsetY, true);
                         system.groups[system.activeGroup].push(containerId);
                         system.layoutData[system.layoutSize - 1][9] = system.activeGroup;
                     }
@@ -741,7 +700,7 @@ function relayx(canvasItem, codeItem, designName, width, height, gridX, gridY, g
                         var offsetY = offsetGridY + containerY;
 
                         while (startY - offsetY >= system.gridStartY) {
-                            containerId = createLayoutContainer(mStartX, mStartY - offsetY, mEndX, mEndY - offsetY);
+                            containerId = createLayoutContainer(mStartX, mStartY - offsetY, mEndX, mEndY - offsetY, true);
                             system.groups[system.activeGroup].push(containerId);
                             system.layoutData[system.layoutSize - 1][9] = system.activeGroup;
                             offsetY += offsetGridY + containerY;
@@ -758,7 +717,7 @@ function relayx(canvasItem, codeItem, designName, width, height, gridX, gridY, g
         }
     }
 
-    function createLayoutContainer(mStartX, mStartY, mEndX, mEndY) {
+    function createLayoutContainer(mStartX, mStartY, mEndX, mEndY, useSnapping) {
         var itemStartX = 0;
         var itemEndX = 0;
         var itemStartY = 0;
@@ -767,8 +726,10 @@ function relayx(canvasItem, codeItem, designName, width, height, gridX, gridY, g
         if (mouse.snapToGrid) {
             mStartX = Math.floor(mStartX / system.gridX) * system.gridX;
             mStartY = Math.floor(mStartY / system.gridY) * system.gridY;
-            mEndX = Math.ceil(mEndX / system.gridX) * system.gridX;
-            mEndY = Math.ceil(mEndY / system.gridY) * system.gridY;
+            if (useSnapping) {
+                mEndX = Math.ceil(mEndX / system.gridX) * system.gridX;
+                mEndY = Math.ceil(mEndY / system.gridY) * system.gridY;
+            }
         }
 
         if (mStartX < mEndX) {
@@ -1050,7 +1011,7 @@ function relayx(canvasItem, codeItem, designName, width, height, gridX, gridY, g
             '[Control] cancels ongoing action or when grouping/ungrouping items',
             '[Shift] snaps to grid when drawing selection, moving an item (click and drag) and mirroring',
             '[Left click and drag movement] Moves a single item or a single item of a group',
-            '[Y] Move mode on/off switch, moves a element or group if grouped, can be used with snapping',
+            '[Y / Z] Move mode on/off switch, moves a element or group if grouped, can be used with snapping',
             '[Delete] Deletes a single element or grouped elements',
             '[C] create a copy of a single item selection',
             '[V] pastes the copy at cursor location, snapping is possible',
@@ -1146,15 +1107,17 @@ function relayx(canvasItem, codeItem, designName, width, height, gridX, gridY, g
 
     function renderNotifications() {
         var notes = system.notifications.length;
+
         if (system.showHelpNote) {
             var offsetY = 36;
         } else {
             var offsetY = 20;
         }
+
         dc.font = "10px sans-serif";
         dc.fillStyle = design.notificationColor;
         if (!system.showHelp && system.showHelpNote) {
-            dc.fillText("Press [I] to open help, [Z] to hide this message", 20, 20);
+            dc.fillText("Press [I] to open help, [U] to hide/show this message", 20, 20);
         }
 
         while (notes--) {
@@ -1326,14 +1289,13 @@ function relayx(canvasItem, codeItem, designName, width, height, gridX, gridY, g
                 }
             }
         }
-
         if (evt.keyCode === 16) {
             // Shift key snapping
             mouse.snapToGrid = true;
             //mouse.currentAction = null;
             system.shiftPressed = true;
             return;
-        } else if (evt.keyCode === 89) {
+        } else if (evt.keyCode === 89 || evt.keyCode === 90) {
             // Y key, allows moving off items when pressend once, disables if pressed a second time
             if (mouse.selection !== null) {
                 if (mouse.currentAction !== "dragGroup") {
@@ -1346,8 +1308,9 @@ function relayx(canvasItem, codeItem, designName, width, height, gridX, gridY, g
         } else if (evt.keyCode === 32) {
             // Space bar pressed, turns on repeatition
             evt.preventDefault();
-            if (mouse.currentAction === "selection" || mouse.selection !== null) {
+            if ((mouse.currentAction === "selection" || mouse.selection !== null) && mouse.currentAction !== "mirrorSelection") {
                 mouse.currentAction = "mirrorSelection";
+                lg("Mirroring selection.")
             }
             return;
         } else if (evt.keyCode === 171 || evt.keyCode === 107) {
@@ -1534,7 +1497,7 @@ function relayx(canvasItem, codeItem, designName, width, height, gridX, gridY, g
             return;
         }
 
-        if (evt.keyCode === 90) {
+        if (evt.keyCode === 85) {
             system.showHelpNote = !system.showHelpNote;
             return;
         }
@@ -1559,7 +1522,7 @@ function relayx(canvasItem, codeItem, designName, width, height, gridX, gridY, g
         } else if (evt.keyCode === 86) {
             // V key create a copy at cursor location
             if (system.copyItem !== null) {
-                createLayoutContainer(mouse.x, mouse.y, mouse.x + system.copyItem[4] - system.copyItem[2], mouse.y + system.copyItem[5] - system.copyItem[3]);
+                createLayoutContainer(mouse.x, mouse.y, mouse.x + system.copyItem[4] - system.copyItem[2], mouse.y + system.copyItem[5] - system.copyItem[3], false);
                 mouse.selection = system.layoutData[system.layoutSize - 1];
             }
         } else if (evt.keyCode === 68) {
