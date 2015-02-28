@@ -1418,6 +1418,8 @@ function relayx(canvasItem, codeItem, designName, width, height, gridX, gridY, g
         system.layoutData = [];
         system.layoutSize = 0;
 
+        var groupIndexes = [];
+
         if (system.storage.getItem(layoutKey) !== null) {
             while (system.storage.getItem(layoutSubKey + layoutIndex) !== null && system.storage.getItem(layoutSubKey + layoutIndex) !== "false") {
                 var storageItemData = system.storage.getItem(layoutSubKey + layoutIndex).split(",");
@@ -1430,11 +1432,14 @@ function relayx(canvasItem, codeItem, designName, width, height, gridX, gridY, g
 
                 var groupKey = storageItemData[9];
                 if (groupKey !== -1) {
-                    if (groupKey > system.groups.length - 1) {
+                    if (groupIndexes.indexOf(groupKey) === -1) {
+                        groupIndexes.push(groupKey);
                         system.groups.push([storageItemData[0]]);
                     } else {
-                        system.groups[groupKey].push(storageItemData[0]);
+                        system.groups[groupIndexes.indexOf(groupKey)].push(storageItemData[0]);
                     }
+
+                    storageItemData[9] = groupIndexes.indexOf(groupKey);
                 }
                 system.layoutData.push(storageItemData);
                 system.layoutSize++;
