@@ -1300,8 +1300,10 @@ function relayx(canvasItem, codeItem, designName, width, height, gridX, gridY, g
             if (mouse.selection !== null) {
                 if (mouse.currentAction !== "dragGroup") {
                     mouse.currentAction = "dragGroup";
+                    lg("Activated dragging.");
                 } else {
                     mouse.currentAction = "selected";
+                    lg("Deactivated dragging.");
                 }
             }
             return;
@@ -1310,7 +1312,7 @@ function relayx(canvasItem, codeItem, designName, width, height, gridX, gridY, g
             evt.preventDefault();
             if ((mouse.currentAction === "selection" || mouse.selection !== null) && mouse.currentAction !== "mirrorSelection") {
                 mouse.currentAction = "mirrorSelection";
-                lg("Mirroring selection.")
+                lg("Mirroring selection.");
             }
             return;
         } else if (evt.keyCode === 171 || evt.keyCode === 107) {
@@ -1428,11 +1430,10 @@ function relayx(canvasItem, codeItem, designName, width, height, gridX, gridY, g
 
                 var groupKey = storageItemData[9];
                 if (groupKey !== -1) {
-                    if (groupKey !== system.activeGroup) {
+                    if (groupKey > system.groups.length - 1) {
                         system.groups.push([storageItemData[0]]);
-                        system.activeGroup = storageItemData[9];
                     } else {
-                        system.groups[system.activeGroup].push(storageItemData[0]);
+                        system.groups[groupKey].push(storageItemData[0]);
                     }
                 }
                 system.layoutData.push(storageItemData);
@@ -1452,6 +1453,10 @@ function relayx(canvasItem, codeItem, designName, width, height, gridX, gridY, g
 
     function clearDesigns() {
         Storage.clear();
+    }
+
+    function generateRenderedView() {
+
     }
 
 
