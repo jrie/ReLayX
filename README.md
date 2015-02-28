@@ -43,11 +43,11 @@ The container can now be moved by pressing left, to activate, and dragging. Noti
 If you want to snap the item to the grid, you can press [SHIFT] to do so, this also snaps the container into the grid.
 
 To delete the container press [DELETE]. To create a copy press [C] and [V] to paste it at the mouse cursor location, snapping can be used here too when holding [SHIFT] while pressing [V] once.
- 
+
 #### Grouping
 If you have two or more containers, you can group them together. This can be done by selecting, another ungrouped (see the color when clicking on it) and holding [CONTROL] and left click onto it they now are grouped and change there colors when selected.
 
-Grouped items can be moved each by left click and drag or as whole by pressing [Y], [Y] is a toggle, no need to hold down the key - and move the mouse around, snapping using [SHIFT] is possible too.
+Grouped items can be moved each by left click and drag or as whole by pressing [Y or Z], [Y or Z] is a toggle, no need to hold down the key - and move the mouse around, snapping using [SHIFT] is possible too."
 
 To ungroup an item, select the grouped container and then click, while holding [CONTROL], on it again, its then ungrouped. This is also shown by its colors.
 
@@ -64,5 +64,5 @@ Another quick way to create mirrors: Select one of those new containers, anyone 
 Now hold [SPACE] and press [X] once, if nothing appears, press [W] again, you should now see a column of possible mirrors. Left click on one to while holding [SPACE] to create one at that location.
 
 Pressing [Q] will decrease the grid spacing by one unit to zero, while [W] will increase it. If you reach zero the default spacing is used. Meaning, if you draw a selection with 2 gridspaces away from the left, you will get mirrors when holding [SPACE] in size of the container plus 2 gridspaces away. [Q / W] avoid that limitation.
-            
+
 If you have set spacing on any axis, this will also draw mirrors on the whole X or Y row/column. If you want to create copies, use the shadowing trick by selection the element and setting the grid axis spacing with [Q] or [W].

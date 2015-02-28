@@ -1062,8 +1062,8 @@ function relayx(canvasItem, codeItem, designName, width, height, gridX, gridY, g
             "If you have two or more containers, you can group them together. This can be done by selecting",
             "another ungrouped (see the color when clicking on it) and holding [CONTROL] and left click onto it",
             "they now are grouped and change there colors when selected.",
-            "Grouped items can be moved each by left click and drag or as whole by pressing [Y], [Y] is a toggle, no need",
-            "to hold down the key - and move the mouse around, snapping using [SHIFT] is possible too.",
+            "Grouped items can be moved each by left click and drag or as whole by pressing [Y or Z], [Y or Z] is a toggle, no need",
+            "to hold down the key - and move the mouse around, snapping using [SHIFT] snapping is possible too.",
             "To ungroup an item, select the grouped container and then click, while holding [CONTROL], on it again, its then ungrouped.",
             "This is also shown by its colors."
         ];
