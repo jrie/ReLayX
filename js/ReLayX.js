@@ -1417,6 +1417,7 @@ function relayx(canvasItem, codeItem, designName, width, height, gridX, gridY, g
 
         system.layoutData = [];
         system.layoutSize = 0;
+        system.groups = [];
 
         var groupIndexes = [];
 
@@ -1447,6 +1448,7 @@ function relayx(canvasItem, codeItem, designName, width, height, gridX, gridY, g
             }
 
             system.activeGroup = null;
+            mouse.selection = null;
 
             lg("Design loaded from slot " + slot + ".");
             return;
