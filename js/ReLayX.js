@@ -576,16 +576,17 @@ function relayx(canvasItem, codeItem, designName, width, height, gridX, gridY, g
                                     for (var layoutItem = 0; layoutItem < system.layoutSize; layoutItem++) {
                                         if (system.layoutData[layoutItem][0] === system.groups[system.activeGroup][0]) {
                                             system.layoutData[layoutItem][9] = -1;
-                                            system.groups.splice(system.activeGroup, 1);
-                                            break;
+                                        } else if (system.layoutData[layoutItem][9] > system.activeGroup) {
+                                            system.layoutData[layoutItem][9]--;
                                         }
                                     }
+
+                                    system.groups.splice(system.activeGroup, 1);
+                                    system.activeGroup = null;
                                 }
-                                system.activeGroup = null;
                                 break;
                             }
                         }
-                        mouse.selection[9] = -1;
                     }
                 }
             } else {
@@ -1446,6 +1447,9 @@ function relayx(canvasItem, codeItem, designName, width, height, gridX, gridY, g
         system.layoutData = [];
         system.layoutSize = 0;
         system.groups = [];
+        system.activeGroup = null;
+        system.generatedDivs = [];
+        mouse.selection = null;
 
         var groupIndexes = [];
 
@@ -1491,6 +1495,8 @@ function relayx(canvasItem, codeItem, designName, width, height, gridX, gridY, g
     }
 
     function rebindHandlers() {
+        mouse.selection = null;
+
         if (system.isCalculating) {
             canvas.removeEventListener("mousedown", checkMouseDown);
             document.removeEventListener("keydown", handleKeyboardDown);
