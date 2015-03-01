@@ -105,7 +105,10 @@ function relayx(canvasItem, codeItem, designName, width, height, gridX, gridY, g
     system.notifications = [];
     system.showHelpNote = true;
     system.shiftPressed = false;
-    system.storage = window.sessionStorage || null;
+    system.storage = window.localStorage || null;
+    system.isCalculating = false;
+    system.generatedDivs = [];
+    system.renderDivs = true;
 
     // Might only work on IE11 and only if the user agent is not altered by the user
     system.isIE = window.navigator.userAgent.indexOf("Trident") !== -1 ? true : false;
@@ -566,13 +569,14 @@ function relayx(canvasItem, codeItem, designName, width, height, gridX, gridY, g
                     if (mouse.previousSelection[0] === mouse.selection[0]) {
                         for (var groupItem = 0; groupItem < system.groups[system.activeGroup].length; groupItem++) {
                             if (system.groups[system.activeGroup][groupItem] === mouse.selection[0]) {
+                                mouse.selection[9] = -1;
                                 system.groups[system.activeGroup].splice(groupItem, 1);
 
                                 if (system.groups[system.activeGroup].length === 1) {
                                     for (var layoutItem = 0; layoutItem < system.layoutSize; layoutItem++) {
                                         if (system.layoutData[layoutItem][0] === system.groups[system.activeGroup][0]) {
-                                            system.groups.splice(system.activeGroup, 1);
                                             system.layoutData[layoutItem][9] = -1;
+                                            system.groups.splice(system.activeGroup, 1);
                                             break;
                                         }
                                     }
@@ -1131,26 +1135,50 @@ function relayx(canvasItem, codeItem, designName, width, height, gridX, gridY, g
         }
     }
 
+    function renderDivs() {
+        var divs = system.generatedDivs.length;
+        var currentDiv = [];
+        dc.beginPath();
+        dc.lineWidth = 2;
+        dc.strokeStyle = design.containerBorderColor;
+        while (divs--) {
+            currentDiv = system.generatedDivs[divs];
+            dc.rect(currentDiv[0], currentDiv[1], currentDiv[2] - currentDiv[0], currentDiv[3] - currentDiv[1]);
+        }
+        dc.closePath();
+        dc.stroke();
+        dc.lineWidth = 1;
+    }
+
 
     // Mainloop
     function mainloop() {
         drawItem("background", 0, 1, 2, 3, false);
-
-        if (system.drawGrid) {
-            drawGrid(system.gridStartX, system.gridStartY, system.gridEndX, system.gridEndY);
+        if (!system.isCalculating) {
+            if (system.drawGrid) {
+                drawGrid(system.gridStartX, system.gridStartY, system.gridEndX, system.gridEndY);
+            }
         }
 
         renderLayoutItems();
 
-        if (system.drawHighlight) {
-            dc.fillStyle = design.hightlighterColor;
-            dc.fillRect(Math.floor(mouse.x / system.gridX) * system.gridX, 0, system.gridX, canvas.height);
-            dc.fillRect(0, Math.floor(mouse.y / system.gridY) * system.gridY, canvas.width, system.gridY);
+        if (!system.isCalculating) {
+            if (system.renderDivs) {
+                renderDivs();
+            }
+
+            if (system.drawHighlight) {
+                dc.fillStyle = design.hightlighterColor;
+                dc.fillRect(Math.floor(mouse.x / system.gridX) * system.gridX, 0, system.gridX, canvas.height);
+                dc.fillRect(0, Math.floor(mouse.y / system.gridY) * system.gridY, canvas.width, system.gridY);
+            }
+
         }
 
         if (mouse.currentAction === "selection" || mouse.currentAction === "mirrorSelection") {
             drawSelection();
         }
+
 
         if (system.showNotifications) {
             renderNotifications();
@@ -1462,8 +1490,143 @@ function relayx(canvasItem, codeItem, designName, width, height, gridX, gridY, g
         Storage.clear();
     }
 
+    function rebindHandlers() {
+        if (system.isCalculating) {
+            canvas.removeEventListener("mousedown", checkMouseDown);
+            document.removeEventListener("keydown", handleKeyboardDown);
+            document.removeEventListener("keyup", handleKeyboardUp);
+        } else {
+            canvas.addEventListener("mousedown", checkMouseDown);
+            document.addEventListener("keydown", handleKeyboardDown);
+            document.addEventListener("keyup", handleKeyboardUp);
+        }
+    }
+
     function generateRenderedView() {
 
+        // The general starting coordinates
+        var startX = system.gridStartX;
+        var startY = system.gridStartY;
+        var endX = system.gridEndX;
+        var endY = system.gridEndY;
+
+        // How much space we have
+        var spaceX = endX - startX;
+        var spaceY = endY - startY;
+
+        // The general point we are working with
+        var x = startX;
+        var y = startY;
+
+        var items = system.layoutSize;
+        var item = system.layoutData[0];
+        var possibleItems = getArrayCopy(system.layoutData);
+        var discoveredItems = [];
+
+        // The offsets
+        var offsetStartX = startX;
+        var offsetEndX = startY;
+        var offsetStartY = startY;
+        var offsetEndY = endY;
+
+        // Do the actual processing
+        if (system.isCalculating) {
+            return;
+        }
+
+        system.isCalculating = true;
+        system.generatedDivs = [];
+        system.activeGroup = null;
+        mouse.selection = null;
+        rebindHandlers();
+
+        var activeGroup = -1;
+        var generatedDivs = [];
+
+        function calculateDivs() {
+            var item = [];
+            var subItem = [];
+
+            var activeDiv = -1;
+            var usedGroups = [];
+            for (var items = 0; items < discoveredItems.length; items++) {
+                item = discoveredItems[items];
+                if (item[4] === -1) {
+                    // Create a single div
+                    generatedDivs.push([item[0], item[1], item[2], item[3], item[5]]);
+                    usedGroups.push(-1);
+                } else {
+                    var index = usedGroups.indexOf(item[4]);
+                    if (index === -1) {
+                        usedGroups.push(item[4]);
+                        generatedDivs.push([item[0], item[1], item[2], item[3], item[5]]);
+                    } else {
+                        activeDiv = generatedDivs[index];
+                        activeDiv[2] = item[2];
+                        activeDiv[3] = item[3];
+                    }
+                }
+            }
+
+            lg(generatedDivs);
+
+            system.generatedDivs = generatedDivs;
+        }
+
+        function doProcessing() {
+            for (x = startX; x < endX; x++) {
+                items = discoveredItems.length;
+                while (items--) {
+                    item = discoveredItems[items];
+                    dc.beginPath();
+                    dc.rect(item[0], item[1], item[2], item[3]);
+                    dc.closePath();
+                    if (dc.isPointInPath(x, y)) {
+                        mouse.selection = [item[5]];
+                        break;
+                    }
+                }
+
+                items = possibleItems.length;
+                while (items--) {
+                    item = possibleItems[items];
+                    dc.beginPath();
+                    dc.rect(item[2], item[3], item[4], item[5]);
+                    dc.closePath();
+                    if (dc.isPointInPath(x, y)) {
+                        discoveredItems.push([item[2], item[3], item[4], item[5], item[9], item[0]]);
+                        mouse.selection = [item[0]];
+                        possibleItems.splice(items, 1);
+                        break;
+                    }
+                }
+
+                if (possibleItems.length === 0) {
+                    lg("Processing done...");
+                    system.isCalculating = false;
+                    calculateDivs();
+                    rebindHandlers();
+                    return;
+                }
+            }
+
+            lg("Processing of row " + ((y - startY) + 1) + " done.");
+
+            y++;
+            if (y > endY) {
+                lg("Processing done...");
+                lg(discoveredItems);
+                system.isCalculating = false;
+                calculateDivs();
+                rebindHandlers();
+                return;
+            }
+
+            window.requestAnimationFrame(doProcessing);
+        }
+
+        // Call the processor  loop first time
+        doProcessing();
     }
 
 
@@ -1474,6 +1637,13 @@ function relayx(canvasItem, codeItem, designName, width, height, gridX, gridY, g
 
         if (evt.keyCode === 16) {
             system.shiftPressed = false;
+            return;
+        } else if (evt.keyCode === 82) {
+            generateRenderedView();
+            lg("Generating rendered view");
+            return;
+        } else if (evt.keyCode === 72) {
+            system.renderDivs = !system.renderDivs;
             return;
         }
 
@@ -1500,21 +1670,13 @@ function relayx(canvasItem, codeItem, designName, width, height, gridX, gridY, g
                 lg("Storage cleared...");
                 return;
             }
-        }
-
-
-
-        if (evt.keyCode === 73) {
+        } else if (evt.keyCode === 73) {
             system.showHelp = !system.showHelp;
             return;
-        }
-
-        if (evt.keyCode === 85) {
+        } else if (evt.keyCode === 85) {
             system.showHelpNote = !system.showHelpNote;
             return;
-        }
-
-        if (evt.keyCode === 17) {
+        } else if (evt.keyCode === 17) {
             // Control key - cancels current action, for example selection or container creation
             mouse.currentAction = null;
         } else if (evt.keyCode === 16) {
