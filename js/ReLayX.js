@@ -582,8 +582,8 @@ function relayx(canvasItem, codeItem, designName, width, height, gridX, gridY, g
                                     }
 
                                     system.groups.splice(system.activeGroup, 1);
-                                    system.activeGroup = null;
                                 }
+                                system.activeGroup = null;
                                 break;
                             }
                         }
@@ -1548,12 +1548,12 @@ function relayx(canvasItem, codeItem, designName, width, height, gridX, gridY, g
 
         var activeGroup = -1;
         var generatedDivs = [];
+        lg(discoveredItems);
 
         function calculateDivs() {
             var item = [];
-            var subItem = [];
 
-            var activeDiv = -1;
+            var activeDiv = [];
             var usedGroups = [];
             for (var items = 0; items < discoveredItems.length; items++) {
                 item = discoveredItems[items];
@@ -1585,9 +1585,10 @@ function relayx(canvasItem, codeItem, designName, width, height, gridX, gridY, g
                 while (items--) {
                     item = discoveredItems[items];
                     dc.beginPath();
-                    dc.rect(item[0], item[1], item[2], item[3]);
+                    dc.rect(item[0], item[1], item[2] - item[0], item[3] - item[1]);
                     dc.closePath();
                     if (dc.isPointInPath(x, y)) {
+                        x += item[2] - item[0] + 1;
                         mouse.selection = [item[5]];
                         break;
                     }
@@ -1602,6 +1603,7 @@ function relayx(canvasItem, codeItem, designName, width, height, gridX, gridY, g
                     if (dc.isPointInPath(x, y)) {
                         discoveredItems.push([item[2], item[3], item[4], item[5], item[9], item[0]]);
                         mouse.selection = [item[0]];
+                        x = item[4] + 1;
                         possibleItems.splice(items, 1);
                         break;
                     }
