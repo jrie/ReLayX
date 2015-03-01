@@ -16,6 +16,7 @@ function getDesign(designName, width, height) {
             design.containerElement = ["solid", ['#9a9a9a']];
             design.containerBorderColor = 'rgba(0,0,0, 0.5)';
             design.notificationColor = "#000";
+            design.labelColor = "#000";
             break;
         case "firebird":
         default:
@@ -29,6 +30,7 @@ function getDesign(designName, width, height) {
             design.containerElement = ["solid", ['rgba(56, 0, 0, 0.55)']];
             design.containerBorderColor = 'rgba(0,0,0, 0.5)';
             design.notificationColor = "#aeaeae";
+            design.labelColor = "#aeaeae";
 
             design.resizeRightBottom = [["line", "line"], ["solid", "solid"], [["#222"], ["#fff"]], [[10, 0, 10, 10, 0, 10, 10, 0], [7, 3, 7, 7, 3, 7, 7, 3]], [-12, -12]];
 
@@ -793,7 +795,7 @@ function relayx(canvasItem, codeItem, designName, width, height, gridX, gridY, g
         }
 
         // id, designElementName, x, y, xEnd, yEnd, border, padding, margin, groupIndex
-        system.layoutData.push([id, "containerElement", itemStartX, itemStartY, itemEndX, itemEndY, 0, 0, 0, -1]);
+        system.layoutData.push([id, "containerElement", itemStartX, itemStartY, itemEndX, itemEndY, 0, 0, 0, -1, ""]);
         system.layoutSize++;
         return id;
     }
@@ -829,6 +831,11 @@ function relayx(canvasItem, codeItem, designName, width, height, gridX, gridY, g
                 dc.rect(layoutItem[2], layoutItem[3], layoutItem[4] - layoutItem[2], layoutItem[5] - layoutItem[3]);
                 dc.closePath();
                 dc.fill();
+
+                // Draw the labels
+                dc.fillStyle = design.labelColor;
+                dc.textAlign = "center";
+                dc.fillText(layoutItem[10], layoutItem[2] + ((layoutItem[4] - layoutItem[2]) * 0.5), layoutItem[3] + ((layoutItem[5] - layoutItem[3]) * 0.5) + 3);
             }
         } else {
 
@@ -875,6 +882,11 @@ function relayx(canvasItem, codeItem, designName, width, height, gridX, gridY, g
                     dc.closePath();
                     dc.fill();
                 }
+
+                // Draw the labels
+                dc.fillStyle = design.labelColor;
+                dc.textAlign = "center";
+                dc.fillText(layoutItem[10], layoutItem[2] + ((layoutItem[4] - layoutItem[2]) * 0.5), layoutItem[3] + ((layoutItem[5] - layoutItem[3]) * 0.5) + 3);
             }
         }
     }
@@ -1011,6 +1023,7 @@ function relayx(canvasItem, codeItem, designName, width, height, gridX, gridY, g
         dc.rect(0, 0, canvas.width, canvas.height);
         dc.closePath();
         dc.fill();
+        dc.textAlign = "left";
 
         var shortcuts = ['[I] Toggles this help on/off', '[G] key toggles the grid on an off', '[D] toogles row / column highlighting',
             '[Control] cancels ongoing action or when grouping/ungrouping items',
@@ -1027,7 +1040,8 @@ function relayx(canvasItem, codeItem, designName, width, height, gridX, gridY, g
             '[Q / W] decrease / increase mirror grid spacing on selected axis - used with [SPACE] and [X]',
             '[E] zeros/erases the grid spacing values for both mirroring axis',
             '[+ or -] Increase or decrase the border on a single item or a group of items',
-            '[1 to 9] - Saves design in slot 1 to 9, [SHIFT + 1 ... 9] loads a design from slot 1 to 9, [BACKSPACE] Clears all saved data'
+            '[1 to 9] - Saves design in slot 1 to 9, [SHIFT + 1 ... 9] loads a design from slot 1 to 9, [BACKSPACE] Clears all saved data',
+            '[L] Create or rename a labeled item'
         ];
 
         dc.fillStyle = "#000";
@@ -1121,6 +1135,8 @@ function relayx(canvasItem, codeItem, designName, width, height, gridX, gridY, g
 
         dc.font = "10px sans-serif";
         dc.fillStyle = design.notificationColor;
+        dc.textAlign = "left";
+
         if (!system.showHelp && system.showHelpNote) {
             dc.fillText("Press [I] to open help, [U] to hide/show this message", 20, 20);
         }
@@ -1308,16 +1324,19 @@ function relayx(canvasItem, codeItem, designName, width, height, gridX, gridY, g
                         return;
                     }
                 }
-            }
-
-            if (evt.keyCode === 17) {
+            } else if (evt.keyCode === 17) {
                 // Control key grouping of elements or ungrouping
                 if (mouse.currentAction === "selected") {
                     mouse.currentAction = "grouping";
                     return;
                 }
+            } else if (evt.keyCode === 76) {
+                var blockName = prompt("What should be the name of the block?", mouse.selection[10]);
+                mouse.selection[10] = blockName;
+                return;
             }
         }
+
         if (evt.keyCode === 16) {
             // Shift key snapping
             mouse.snapToGrid = true;
