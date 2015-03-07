@@ -57,7 +57,10 @@ function relayx(canvasItem, codeItem, designName, width, height, gridX, gridY, g
         if (system.showNotifications) {
             system.notifications.push([0, msg]);
         }
-        window.console.log(msg);
+
+        if (window.console) {
+            window.console.log(msg);
+        }
     }
 
     // Set styles
@@ -1663,6 +1666,7 @@ function relayx(canvasItem, codeItem, designName, width, height, gridX, gridY, g
         }
 
         if (evt.keyCode === 16) {
+            mouse.snapToGrid = false;
             system.shiftPressed = false;
             return;
         } else if (evt.keyCode === 82) {
