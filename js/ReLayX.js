@@ -114,6 +114,7 @@ function relayx(canvasItem, codeItem, designName, width, height, gridX, gridY, g
     system.isCalculating = false;
     system.generatedDivs = [];
     system.renderDivs = true;
+    system.drawLabels = true;
 
     // Might only work on IE11 and only if the user agent is not altered by the user
     system.isIE = window.navigator.userAgent.indexOf("Trident") !== -1 ? true : false;
@@ -836,9 +837,11 @@ function relayx(canvasItem, codeItem, designName, width, height, gridX, gridY, g
                 dc.fill();
 
                 // Draw the labels
-                dc.fillStyle = design.labelColor;
-                dc.textAlign = "center";
-                dc.fillText(layoutItem[10], layoutItem[2] + ((layoutItem[4] - layoutItem[2]) * 0.5), layoutItem[3] + ((layoutItem[5] - layoutItem[3]) * 0.5) + 3);
+                if (system.drawLabels) {
+                    dc.fillStyle = design.labelColor;
+                    dc.textAlign = "center";
+                    dc.fillText(layoutItem[10], layoutItem[2] + ((layoutItem[4] - layoutItem[2]) * 0.5), layoutItem[3] + ((layoutItem[5] - layoutItem[3]) * 0.5) + 3);
+                }
             }
         } else {
 
@@ -887,9 +890,11 @@ function relayx(canvasItem, codeItem, designName, width, height, gridX, gridY, g
                 }
 
                 // Draw the labels
-                dc.fillStyle = design.labelColor;
-                dc.textAlign = "center";
-                dc.fillText(layoutItem[10], layoutItem[2] + ((layoutItem[4] - layoutItem[2]) * 0.5), layoutItem[3] + ((layoutItem[5] - layoutItem[3]) * 0.5) + 3);
+                if (system.drawLabels) {
+                    dc.fillStyle = design.labelColor;
+                    dc.textAlign = "center";
+                    dc.fillText(layoutItem[10], layoutItem[2] + ((layoutItem[4] - layoutItem[2]) * 0.5), layoutItem[3] + ((layoutItem[5] - layoutItem[3]) * 0.5) + 3);
+                }
             }
         }
     }
@@ -1044,7 +1049,7 @@ function relayx(canvasItem, codeItem, designName, width, height, gridX, gridY, g
             '[E] zeros/erases the grid spacing values for both mirroring axis',
             '[+ or -] Increase or decrase the border on a single item or a group of items',
             '[1 to 9] - Saves design in slot 1 to 9, [SHIFT + 1 ... 9] loads a design from slot 1 to 9, [BACKSPACE] Clears all saved data',
-            '[L] Create or rename a labeled item'
+            '[L] Create or rename a labeled item if selected, if nothing is selected, turns label rendering on or off'
         ];
 
         dc.fillStyle = "#000";
@@ -1333,12 +1338,21 @@ function relayx(canvasItem, codeItem, designName, width, height, gridX, gridY, g
                     mouse.currentAction = "grouping";
                     return;
                 }
-            } else if (evt.keyCode === 76) {
+            }
+        }
+
+        if (evt.keyCode === 76) {
+            if (mouse.selection !== null) {
                 var blockName = prompt("What should be the name of the block?", mouse.selection[10]);
                 mouse.selection[10] = blockName;
                 return;
+            } else {
+                system.drawLabels = !system.drawLabels;
+                lg("Use labels is set to " + system.drawLabels);
             }
         }
+
+
 
         if (evt.keyCode === 16) {
             // Shift key snapping
