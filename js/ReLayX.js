@@ -33,7 +33,6 @@ function getDesign(designName, width, height) {
             design.labelColor = "#aeaeae";
 
             design.resizeRightBottom = [["line", "line"], ["solid", "solid"], [["#222"], ["#fff"]], [[10, 0, 10, 10, 0, 10, 10, 0], [7, 3, 7, 7, 3, 7, 7, 3]], [-12, -12]];
-
             break;
     }
 
@@ -69,6 +68,8 @@ function relayx(canvasItem, codeItem, designName, width, height, gridX, gridY, g
     canvas.style.cursor = "none";
 
     var design = getDesign(designName, width, height, gridX, gridY);
+    system.designNames = ["snowwhite", "firebird"];
+    system.currentDesign = 0;
 
     // Our dataholder
     //var system = {};
@@ -115,13 +116,21 @@ function relayx(canvasItem, codeItem, designName, width, height, gridX, gridY, g
     system.generatedDivs = [];
     system.renderDivs = true;
     system.drawLabels = true;
+    system.displayBrowserGrid = true;
+    system.browserSpacingStart = window.navigator.userAgent.indexOf("Chrome") === -1 ? 113 : 0;
+    system.browserSpacing = window.navigator.userAgent.indexOf("Chrome") === -1 ? 113 : 99.88;
 
     // Might only work on IE11 and only if the user agent is not altered by the user
     system.isIE = window.navigator.userAgent.indexOf("Trident") !== -1 ? true : false;
+    system.isChrome = window.navigator.userAgent.indexOf("Chrome") !== -1 ? true : false;
+    //lg(window.navigator.userAgent)
 
     if (system.isIE) {
         system.scrollX = window.pageXOffset;
         system.scrollY = window.pageYOffset;
+    } else if (system.isChrome) {
+        system.scrollX = window.scrollX;
+        system.scrollY = window.scrollY;
     } else {
         system.scrollX = window.scrollX;
         system.scrollY = window.scrollY;
@@ -1033,12 +1042,14 @@ function relayx(canvasItem, codeItem, designName, width, height, gridX, gridY, g
         dc.fill();
         dc.textAlign = "left";
 
-        var shortcuts = ['[I] Toggles this help on/off', '[G] key toggles the grid on an off', '[D] toogles row / column highlighting',
+        var shortcuts = ['[I] Toggles this help on/off',
+            '[G] key toggles the grid on an off, [Shift + G] toggles custom designs',
+            '[D] toogles row / column highlighting / [Shift + D] toggles browser scroll grid on/off',
             '[Control] cancels ongoing action or when grouping/ungrouping items',
             '[Shift] snaps to grid when drawing selection, moving an item (click and drag) and mirroring',
             '[Left click and drag movement] Moves a single item or a single item of a group',
             '[Y / Z] Move mode on/off switch, moves a element or group if grouped, can be used with snapping',
-            '[Delete] Deletes a single element or grouped elements',
+            '[Del] Deletes a single element or a grouped element',
             '[C] create a copy of a single item selection',
             '[V] pastes the copy at cursor location, snapping is possible',
             '[Spacebar] Mirror mode',
@@ -1198,6 +1209,19 @@ function relayx(canvasItem, codeItem, designName, width, height, gridX, gridY, g
                 dc.fillRect(0, Math.floor(mouse.y / system.gridY) * system.gridY, canvas.width, system.gridY);
             }
 
+            if (system.displayBrowserGrid) {
+                var y = system.browserSpacingStart - mouse.offsetY;
+                dc.beginPath();
+                dc.lineWidth = 1;
+                dc.strokeStyle = "#000";
+                while (y < system.height) {
+                    dc.moveTo(0, y);
+                    dc.lineTo(system.width, y);
+                    y += system.browserSpacing;
+                }
+                dc.closePath();
+                dc.stroke();
+            }
         }
 
         if (mouse.currentAction === "selection" || mouse.currentAction === "mirrorSelection") {
@@ -1231,8 +1255,13 @@ function relayx(canvasItem, codeItem, designName, width, height, gridX, gridY, g
             system.scrollY = window.scrollY;
         }
 
-        mouse.x = evt.clientX - mouse.offsetX + system.scrollX;
-        mouse.y = evt.clientY - mouse.offsetY + system.scrollY;
+        if (system.isChrome) {
+            mouse.x = evt.clientX + system.scrollX;
+            mouse.y = evt.clientY + system.scrollY - canvas.offsetTop;
+        } else {
+            mouse.x = evt.clientX - mouse.offsetX + system.scrollX;
+            mouse.y = evt.clientY - mouse.offsetY + system.scrollY;
+        }
 
         if (mouse.currentAction === "dragContainer" || (mouse.currentAction === "dragGroup" && system.activeGroup === null)) {
             mouse.selection[2] += mouse.x - mousePreviousX;
@@ -1584,7 +1613,6 @@ function relayx(canvasItem, codeItem, designName, width, height, gridX, gridY, g
 
         var activeGroup = -1;
         var generatedDivs = [];
-        lg(discoveredItems);
 
         function calculateDivs() {
             var item = [];
@@ -1609,8 +1637,6 @@ function relayx(canvasItem, codeItem, designName, width, height, gridX, gridY, g
                     }
                 }
             }
-
-            lg(generatedDivs);
 
             system.generatedDivs = generatedDivs;
         }
@@ -1659,7 +1685,6 @@ function relayx(canvasItem, codeItem, designName, width, height, gridX, gridY, g
             y++;
             if (y > endY) {
                 lg("Processing done...");
-                lg(discoveredItems);
                 system.isCalculating = false;
                 calculateDivs();
                 rebindHandlers();
@@ -1698,6 +1723,20 @@ function relayx(canvasItem, codeItem, designName, width, height, gridX, gridY, g
                 var slot = evt.keyCode - 48;
                 loadDesign(slot);
                 lg("Loading design...");
+            }
+
+            if (evt.keyCode === 68) {
+                system.displayBrowserGrid = !system.displayBrowserGrid;
+                lg("Display browser grid set to " + system.displayBrowserGrid);
+                return;
+            } else if (evt.keyCode === 71) {
+                if (system.currentDesign >= system.designNames.length - 1) {
+                    system.currentDesign = 0;
+                } else {
+                    system.currentDesign++;
+                }
+                design = getDesign(system.designNames[system.currentDesign], system.width, system.height);
+                return;
             }
         } else {
             if (evt.keyCode >= 49 && evt.keyCode <= 57) {
