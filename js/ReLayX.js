@@ -17,6 +17,7 @@ function getDesign(designName, width, height) {
             design.containerBorderColor = 'rgba(0,0,0, 0.5)';
             design.notificationColor = "#000";
             design.labelColor = "#000";
+            design.helpTextColor = "#000";
             break;
         case "firebird":
         default:
@@ -31,6 +32,7 @@ function getDesign(designName, width, height) {
             design.containerBorderColor = 'rgba(0,0,0, 0.5)';
             design.notificationColor = "#aeaeae";
             design.labelColor = "#aeaeae";
+            design.helpTextColor = "#aeaeae";
 
             design.resizeRightBottom = [["line", "line"], ["solid", "solid"], [["#222"], ["#fff"]], [[10, 0, 10, 10, 0, 10, 10, 0], [7, 3, 7, 7, 3, 7, 7, 3]], [-12, -12]];
             break;
@@ -1063,7 +1065,7 @@ function relayx(canvasItem, codeItem, designName, width, height, gridX, gridY, g
             '[L] Create or rename a labeled item if selected, if nothing is selected, turns label rendering on or off'
         ];
 
-        dc.fillStyle = "#000";
+        dc.fillStyle = design.helpTextColor;
 
         dc.font = "Normal 11px sans-serif";
         dc.fillText('______________________________________ ReLayX Shortcuts ______________________________________', 20, 20);
@@ -1075,7 +1077,7 @@ function relayx(canvasItem, codeItem, designName, width, height, gridX, gridY, g
         }
 
         dc.font = "Normal 11px sans-serif";
-        dc.fillText('___________________________________________ First steps  _________________________________________', 20, 450);
+        dc.fillText('___________________________________________ First steps  _________________________________________', 20, 470);
 
         var first = [
             "Click and drag to create a selection, release the mouse to create a container item.",
@@ -1086,7 +1088,7 @@ function relayx(canvasItem, codeItem, designName, width, height, gridX, gridY, g
         ];
 
         dc.font = "Normal 11px sans-serif";
-        offsetY = 480;
+        offsetY = 495;
         for (var item = 0; item < first.length; item++) {
             dc.fillText(first[item], 20, (item * 21) + offsetY);
         }
