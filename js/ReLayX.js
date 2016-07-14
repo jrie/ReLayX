@@ -116,7 +116,7 @@ function relayx(canvasItem, codeItem, designName, width, height, gridX, gridY, g
     system.generatedDivs = [];
     system.renderDivs = true;
     system.drawLabels = true;
-    system.displayBrowserGrid = true;
+    system.displayBrowserGrid = false;
     system.browserSpacingStart = window.navigator.userAgent.indexOf("Chrome") === -1 ? 113 : 0;
     system.browserSpacing = window.navigator.userAgent.indexOf("Chrome") === -1 ? 113 : 99.88;
 
