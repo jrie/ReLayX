@@ -848,7 +848,7 @@ function relayx(canvasItem, codeItem, designName, width, height, gridX, gridY, g
                 dc.fill();
 
                 // Draw the labels
-                if (system.drawLabels) {
+                if (system.drawLabels && !system.showHelp) {
                     dc.fillStyle = design.labelColor;
                     dc.textAlign = "center";
                     dc.fillText(layoutItem[10], layoutItem[2] + ((layoutItem[4] - layoutItem[2]) * 0.5), layoutItem[3] + ((layoutItem[5] - layoutItem[3]) * 0.5) + 3);
@@ -1507,20 +1507,21 @@ function relayx(canvasItem, codeItem, designName, width, height, gridX, gridY, g
             return;
         }
 
+
         var layoutKey = "layout_" + slot;
         var layoutSubKey = layoutKey + "_";
         var layoutIndex = 0;
 
-        system.layoutData = [];
-        system.layoutSize = 0;
-        system.groups = [];
-        system.activeGroup = null;
-        system.generatedDivs = [];
-        mouse.selection = null;
-
-        var groupIndexes = [];
-
         if (system.storage.getItem(layoutKey) !== null) {
+            system.layoutData = [];
+            system.layoutSize = 0;
+            system.groups = [];
+            system.activeGroup = null;
+            system.generatedDivs = [];
+            mouse.selection = null;
+
+            var groupIndexes = [];
+
             while (system.storage.getItem(layoutSubKey + layoutIndex) !== null && system.storage.getItem(layoutSubKey + layoutIndex) !== "false") {
                 var storageItemData = system.storage.getItem(layoutSubKey + layoutIndex).split(",");
                 for (var key = 0; key < storageItemData.length; key++) {
