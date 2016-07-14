@@ -18,7 +18,7 @@ There is a built-in help, but here are its contents (shortcuts first as they are
 
 ### Shortcuts
 * [I] Toggles this help on/off
-* [G] key toggles the grid on an off
+* [G] key toggles the grid on an off / [SHIFT] + [D] toggles browser grid on and off
 * [D] toogles row / column highlighting
 * [Control] cancels ongoing action or when grouping/ungrouping items
 * [Shift] snaps to grid when drawing selection, moving an item (click and drag) and mirroring
