@@ -377,15 +377,18 @@ function relayx(canvasItem, codeItem, designName, width, height, gridX, gridY, g
         }
 
         if (system.isChrome) {
-          mouse.offsetX = canvas.offsetLeft + system.scrollX;
-          mouse.offsetY = canvas.offsetTop + system.scrollY;
-          mouse.startX = (evt.layerX - mouse.offsetX) + system.scrollX;
-          mouse.startY = (evt.layerY - mouse.offsetY) + system.scrollY;
-          var mX = evt.layerX - mouse.offsetX + system.scrollX;
-          var mY = evt.layerY - mouse.offsetY + system.scrollY;
+          mouse.offsetX = 0;
+          mouse.offsetY = 0;
+          mouse.startX = evt.layerX;
+          mouse.startY = evt.layerY;
+          var mX = evt.layerX;
+          var mY = evt.layerY;
+
+          //var mX = evt.layerX - mouse.offsetX + system.scrollX;
+          //var mY = evt.layerY - mouse.offsetY + system.scrollY;
         } else {
-          mouse.startX = (evt.clientX - mouse.offsetX) + system.scrollX;
-          mouse.startY = (evt.clientY - mouse.offsetY) + system.scrollY;
+          mouse.startX = evt.clientX - mouse.offsetX + system.scrollX;
+          mouse.startY = evt.clientY - mouse.offsetY + system.scrollY;
           var mX = evt.clientX - mouse.offsetX + system.scrollX;
           var mY = evt.clientY - mouse.offsetY + system.scrollY;
         }
@@ -646,8 +649,8 @@ function relayx(canvasItem, codeItem, designName, width, height, gridX, gridY, g
         }
 
         if (system.isChrome) {
-          mouse.endX = evt.layerX - mouse.offsetX + system.scrollX;
-          mouse.endY = evt.layerY - mouse.offsetY + system.scrollY;
+          mouse.endX = evt.layerX;
+          mouse.endY = evt.layerY;
         } else {
           mouse.endX = evt.clientX - mouse.offsetX + system.scrollX;
           mouse.endY = evt.clientY - mouse.offsetY + system.scrollY;
@@ -932,6 +935,7 @@ function relayx(canvasItem, codeItem, designName, width, height, gridX, gridY, g
         var previousFill = dc.fillStyle;
         dc.fillStyle = "rgba(255,255,255, 0.2)";
         if (mouse.selection === null) {
+
             if (mouse.startX < system.gridStartX) {
                 mouse.startX = system.gridStartX;
             } else if (mouse.startX > system.gridEndX) {
