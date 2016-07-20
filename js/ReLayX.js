@@ -379,13 +379,17 @@ function relayx(canvasItem, codeItem, designName, width, height, gridX, gridY, g
         if (system.isChrome) {
           mouse.offsetX = canvas.offsetLeft + system.scrollX;
           mouse.offsetY = canvas.offsetTop + system.scrollY;
+          mouse.startX = (evt.layerX - mouse.offsetX) + system.scrollX;
+          mouse.startY = (evt.layerY - mouse.offsetY) + system.scrollY;
+          var mX = evt.layerX - mouse.offsetX + system.scrollX;
+          var mY = evt.layerY - mouse.offsetY + system.scrollY;
+        } else {
+          mouse.startX = (evt.clientX - mouse.offsetX) + system.scrollX;
+          mouse.startY = (evt.clientY - mouse.offsetY) + system.scrollY;
+          var mX = evt.clientX - mouse.offsetX + system.scrollX;
+          var mY = evt.clientY - mouse.offsetY + system.scrollY;
         }
 
-
-        mouse.startX = evt.clientX - mouse.offsetX + system.scrollX;
-        mouse.startY = evt.clientY - mouse.offsetY + system.scrollY;
-        var mX = evt.clientX - mouse.offsetX + system.scrollX;
-        var mY = evt.clientY - mouse.offsetY + system.scrollY;
         var hasSelection = false;
 
         if (mouse.currentAction === "mirrorSelection") {
@@ -641,8 +645,15 @@ function relayx(canvasItem, codeItem, designName, width, height, gridX, gridY, g
             system.scrollY = window.scrollY;
         }
 
-        mouse.endX = evt.clientX - mouse.offsetX + system.scrollX;
-        mouse.endY = evt.clientY - mouse.offsetY + system.scrollY;
+        if (system.isChrome) {
+          mouse.endX = evt.layerX - mouse.offsetX + system.scrollX;
+          mouse.endY = evt.layerY - mouse.offsetY + system.scrollY;
+        } else {
+          mouse.endX = evt.clientX - mouse.offsetX + system.scrollX;
+          mouse.endY = evt.clientY - mouse.offsetY + system.scrollY;
+        }
+
+
 
         if (mouse.currentAction === "selection") {
             createLayoutContainer(mouse.startX, mouse.startY, mouse.endX, mouse.endY, true);
