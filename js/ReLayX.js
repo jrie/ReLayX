@@ -376,8 +376,11 @@ function relayx(canvasItem, codeItem, designName, width, height, gridX, gridY, g
             system.scrollY = window.scrollY;
         }
 
-        mouse.offsetX = canvas.offsetLeft + system.scrollX;
-        mouse.offsetY = canvas.offsetTop + system.scrollY;
+        if (system.isChrome) {
+          mouse.offsetX = canvas.offsetLeft + system.scrollX;
+          mouse.offsetY = canvas.offsetTop + system.scrollY;
+        }
+
 
         mouse.startX = evt.clientX - mouse.offsetX + system.scrollX;
         mouse.startY = evt.clientY - mouse.offsetY + system.scrollY;
