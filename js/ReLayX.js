@@ -86,7 +86,7 @@ function relayx(canvasItem, codeItem, designName, width, height, gridX, gridY, g
         system.gridStartX = 0;
         system.gridStartY = 0;
     }
-    if (typeof (gridStart) === "object" && gridStart.length === 2) {
+    if (typeof (gridEnd) === "object" && gridEnd.length === 2) {
         system.gridEndX = gridEnd[0];
         system.gridEndY = gridEnd[1];
     } else {
@@ -132,7 +132,7 @@ function relayx(canvasItem, codeItem, designName, width, height, gridX, gridY, g
         system.scrollY = window.pageYOffset;
     } else if (system.isChrome) {
         system.scrollX = window.scrollX;
-        system.scrollY = window.scrollY;
+        system.sfcrollY = window.scrollY;
     } else {
         system.scrollX = window.scrollX;
         system.scrollY = window.scrollY;
@@ -1258,7 +1258,7 @@ function relayx(canvasItem, codeItem, designName, width, height, gridX, gridY, g
         }
 
         if (system.isChrome) {
-            mouse.x = evt.clientX + system.scrollX;
+            mouse.x = evt.clientX + system.scrollX - canvas.offsetLeft;
             mouse.y = evt.clientY + system.scrollY - canvas.offsetTop;
         } else {
             mouse.x = evt.clientX - mouse.offsetX + system.scrollX;
