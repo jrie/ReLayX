@@ -5,6 +5,8 @@ ReLayX is a layouting engine written using a canvas element. Layouting therefore
 
 Layouts then can be saved as images from the canvas using right click save image and then send into another application like Photoshop.
 
+Here you can find a live demo: [ReLayX on dwrox.net](https://dwrox.net/relayx/)
+
 The basic options for the javascript command inside the index.html are: CanvasItemId, codePanel, designName, canvasWidth, canvasHeight, gridX and gridY, [gridStartAtX, gridStartAtY], [gridEndAtX, gridEndAtY]
 * canvasItemID is the canvasItemId to work the script on
 * codePanel - the textarea where to place code generated (not implemented)
