@@ -1,6 +1,11 @@
 # ReLayX
 Relax your layouts - while layouting inside the browser
 
+### Important information
+This repository is archived and development will continue with version 2 at https://github.com/jrie/ReLayX2
+
+----
+
 ReLayX is a layouting engine written using a canvas element. Layouting therefore can be done inside the browser itself. There a basic tools which allow quick creation of layouts onto a customizable grid size. Those tools are mirroring and grouping of elements. Grouping allows simple grouping of layout blocks, while mirroring does create mirrors of a selection, going aligned with the base grid set.
 
 Layouts then can be saved as images from the canvas using right click save image and then send into another application like Photoshop.
